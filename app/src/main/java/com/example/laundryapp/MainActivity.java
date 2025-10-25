@@ -1,5 +1,6 @@
 package com.example.laundryapp;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
@@ -22,6 +23,7 @@ public class MainActivity extends AppCompatActivity {
 
     private RecyclerView recycler;
     private MachineAdapter adapter;
+    private boolean loggedIn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,8 +51,14 @@ public class MainActivity extends AppCompatActivity {
         data.add(new Machine("BB1 Room #2", "2 machines", 0));
 
         adapter = new MachineAdapter(data, item -> {
-            // TODO: handle click (open room, open reservation, etc.)
+            if(!loggedIn){
+
+            }
         });
         recycler.setAdapter(adapter);
+    }
+    public void goToProfileActivity(){
+        Intent intent = new Intent(getApplicationContext(), loginActivity.class);
+        startActivity(intent);
     }
 }
