@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:background="#F8F8F8"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/roomToolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@android:color/white"
+        android:title="Laundry Room"
+        android:titleTextColor="#000000" />
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:background="@android:color/white"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="16dp">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerMachines"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:overScrollMode="never"
+            android:nestedScrollingEnabled="false" />
+
+        <TextView
+            android:id="@+id/textNoReservations"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="No reservations"
+            android:textColor="#555555"
+            android:textSize="14sp"
+            android:textAlignment="center"
+            android:paddingTop="24dp"
+            android:paddingBottom="24dp" />
+    </LinearLayout>
+</LinearLayout>

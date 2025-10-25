@@ -1,15 +1,7 @@
 package com.example.laundryapp;
 
+import android.content.Intent;
 import android.os.Bundle;
-
-import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-
-import android.os.Bundle;
-import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -20,8 +12,8 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
-    private RecyclerView recycler;
-    private MachineAdapter adapter;
+    private RecyclerView recyclerRooms;
+    private RoomAdapter roomAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,27 +22,22 @@ public class MainActivity extends AppCompatActivity {
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        // Title in the toolbar collapses; we keep custom hero texts instead.
-        if (getSupportActionBar() != null) getSupportActionBar().setTitle("");
 
-        // (Optional) set hero subtitles dynamically
-        TextView title = findViewById(R.id.titleHero);
-        TextView sub   = findViewById(R.id.subtitleHero);
-        title.setText("LAUNDRY PRO");
+        recyclerRooms = findViewById(R.id.recyclerRooms);
+        recyclerRooms.setLayoutManager(new LinearLayoutManager(this));
 
-        recycler = findViewById(R.id.recycler);
-        recycler.setLayoutManager(new LinearLayoutManager(this));
+        // TODO: later replace this with Firestore query of "rooms" collection
+        ArrayList<RoomItem> rooms = new ArrayList<>();
+        rooms.add(new RoomItem("bb1_room_1", "BB1 Room #1", "4 machines available"));
+        rooms.add(new RoomItem("bb1_room_2", "BB1 Room #2", "2 machines available"));
 
-        // Demo data — replace with your live data later
-        ArrayList<Machine> data = new ArrayList<>();
-        data.add(new Machine("WASH", "1 available", R.drawable.ic_wash)); // you can use your own icons
-        data.add(new Machine("DRY", "1 available", R.drawable.ic_dry));
-        data.add(new Machine("BB1 Room #1", "4 machines", 0));
-        data.add(new Machine("BB1 Room #2", "2 machines", 0));
-
-        adapter = new MachineAdapter(data, item -> {
-            // TODO: handle click (open room, open reservation, etc.)
+        roomAdapter = new RoomAdapter(rooms, room -> {
+            Intent i = new Intent(MainActivity.this, RoomActivity.class);
+            i.putExtra("roomId", room.roomId);
+            i.putExtra("roomTitle", room.title);
+            startActivity(i);
         });
-        recycler.setAdapter(adapter);
+
+        recyclerRooms.setAdapter(roomAdapter);
     }
 }

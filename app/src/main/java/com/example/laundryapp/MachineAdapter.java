@@ -11,52 +11,58 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
-public class MachineAdapter extends RecyclerView.Adapter<MachineAdapter.VH> {
+public class MachineAdapter extends RecyclerView.Adapter<MachineAdapter.MachineViewHolder> {
 
-    public interface OnMachineClick {
-        void onClick(Machine item);
+    private final List<MachineItem> machines;
+
+    public MachineAdapter(List<MachineItem> machines) {
+        this.machines = machines;
     }
 
-    private final List<Machine> items;
-    private final OnMachineClick listener;
-
-    public MachineAdapter(List<Machine> items, OnMachineClick listener) {
-        this.items = items;
-        this.listener = listener;
-    }
-
-    @NonNull @Override
-    public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    @NonNull
+    @Override
+    public MachineViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_machine, parent, false);
-        return new VH(v);
+                .inflate(R.layout.item_machine_card, parent, false);
+        return new MachineViewHolder(v);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull VH h, int pos) {
-        Machine m = items.get(pos);
-        h.title.setText(m.title);
-        h.subtitle.setText(m.subtitle);
-        if (m.iconRes != 0) {
-            h.icon.setImageResource(m.iconRes);
+    public void onBindViewHolder(@NonNull MachineViewHolder holder, int position) {
+        MachineItem m = machines.get(position);
+
+        holder.machineName.setText(m.name);
+        holder.machineStatus.setText(m.status);
+
+        // icon logic based on machine type
+        if (m.iconResId != 0) {
+            holder.machineIcon.setImageResource(m.iconResId);
         } else {
-            h.icon.setImageResource(android.R.drawable.ic_menu_manage); // fallback
+            // fallback icons if you haven't made proper washer/dryer icons yet
+            if ("washer".equalsIgnoreCase(m.type)) {
+                holder.machineIcon.setImageResource(android.R.drawable.ic_menu_rotate);
+            } else if ("dryer".equalsIgnoreCase(m.type)) {
+                holder.machineIcon.setImageResource(android.R.drawable.ic_menu_week);
+            } else {
+                holder.machineIcon.setImageResource(android.R.drawable.ic_menu_manage);
+            }
         }
-        h.itemView.setOnClickListener(v -> {
-            if (listener != null) listener.onClick(m);
-        });
     }
 
     @Override
-    public int getItemCount() { return items.size(); }
+    public int getItemCount() {
+        return machines.size();
+    }
 
-    static class VH extends RecyclerView.ViewHolder {
-        ImageView icon; TextView title; TextView subtitle;
-        VH(@NonNull View itemView) {
+    static class MachineViewHolder extends RecyclerView.ViewHolder {
+        ImageView machineIcon;
+        TextView machineName;
+        TextView machineStatus;
+        MachineViewHolder(@NonNull View itemView) {
             super(itemView);
-            icon = itemView.findViewById(R.id.icon);
-            title = itemView.findViewById(R.id.title);
-            subtitle = itemView.findViewById(R.id.subtitle);
+            machineIcon = itemView.findViewById(R.id.machineIcon);
+            machineName = itemView.findViewById(R.id.machineName);
+            machineStatus = itemView.findViewById(R.id.machineStatus);
         }
     }
 }
