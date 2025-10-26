@@ -13,6 +13,11 @@
         android:theme="@style/Theme.LaundryApp">
         <activity
             android:name=".RoomActivity"
+            android:parentActivityName=".MainActivity"
+            android:exported="false" />
+        <activity
+            android:name=".loginActivity"
+            android:parentActivityName=".MainActivity"
             android:exported="false" />
         <activity
             android:name=".MainActivity"

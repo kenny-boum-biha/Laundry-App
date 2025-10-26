@@ -1,5 +1,6 @@
 package com.example.laundryapp;
 
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -44,7 +45,9 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.RoomViewHolder
         // holder.roomIcon.setImageResource(android.R.drawable.ic_menu_home);
 
         holder.itemView.setOnClickListener(v -> {
-            if (listener != null) listener.onRoomClick(room);
+            if (listener != null){
+                listener.onRoomClick(room);
+            }
         });
     }
 
