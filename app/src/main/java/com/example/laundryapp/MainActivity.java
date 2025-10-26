@@ -2,11 +2,16 @@ package com.example.laundryapp;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayList;
 
@@ -14,6 +19,8 @@ public class MainActivity extends AppCompatActivity {
 
     private RecyclerView recyclerRooms;
     private RoomAdapter roomAdapter;
+    protected Button signOutButton;
+    private FirebaseAuth mAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,20 +31,49 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         recyclerRooms = findViewById(R.id.recyclerRooms);
+        signOutButton = findViewById(R.id.signOutButton);
         recyclerRooms.setLayoutManager(new LinearLayoutManager(this));
+        //Initializing the database
+        mAuth = FirebaseAuth.getInstance();
+
+    }
+    @Override
+    public void onStart() {
+        super.onStart();
+        //Check if user is logged in, if so, update server side data
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if(currentUser != null){
+            currentUser.reload();
+        }
 
         // TODO: later replace this with Firestore query of "rooms" collection
         ArrayList<RoomItem> rooms = new ArrayList<>();
         rooms.add(new RoomItem("bb1_room_1", "BB1 Room #1", "4 machines available"));
         rooms.add(new RoomItem("bb1_room_2", "BB1 Room #2", "2 machines available"));
-
         roomAdapter = new RoomAdapter(rooms, room -> {
-            Intent i = new Intent(MainActivity.this, RoomActivity.class);
-            i.putExtra("roomId", room.roomId);
-            i.putExtra("roomTitle", room.title);
-            startActivity(i);
-        });
+            Intent roomActivityIntent = new Intent(MainActivity.this, RoomActivity.class);
+            if(currentUser != null){
+                roomActivityIntent.putExtra("roomId", room.roomId);
+                roomActivityIntent.putExtra("roomTitle", room.title);
+                startActivity(roomActivityIntent);
+            }
+            else{
+                goToLoginActivity();
+            }
 
+        });
         recyclerRooms.setAdapter(roomAdapter);
+        signOutButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                mAuth.signOut();
+                finish();
+                startActivity(getIntent());
+            }
+        });
+    }
+    public void goToLoginActivity(){
+        Intent intent = new Intent(getApplicationContext(), loginActivity.class);
+        startActivity(intent);
     }
 }
