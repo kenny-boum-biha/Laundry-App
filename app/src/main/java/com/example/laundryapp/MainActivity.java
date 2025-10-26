@@ -8,6 +8,15 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.firestore.FirebaseFirestore;
+import java.util.HashMap;
+import java.util.Map;
+import android.util.Log;
+import java.util.Timer;
+import java.util.TimerTask;
+
+
+
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
@@ -26,6 +35,30 @@ public class MainActivity extends AppCompatActivity {
         recyclerRooms = findViewById(R.id.recyclerRooms);
         recyclerRooms.setLayoutManager(new LinearLayoutManager(this));
 
+        // Firestore test
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        /*Map<String, Object> testData = new HashMap<>();
+        testData.put("message", "Hello Firebase!");
+        testData.put("timestamp", System.currentTimeMillis()); */
+
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                Map<String, Object> testData = new HashMap<>();
+                testData.put("message", "Hello Firebase!");
+                testData.put("timestamp", System.currentTimeMillis());
+                db.collection("test").document("ping").set(testData);
+                db.collection("test")
+                        .document("ping")
+                        .set(testData)
+                        .addOnSuccessListener(aVoid -> Log.d("FirebaseTest", "Test document written successfully"))
+                        .addOnFailureListener(e -> Log.e("FirebaseTest", "Failed to write test document", e));
+
+
+            }
+        }, 0, 5000); // every 5 seconds
+
         // TODO: later replace this with Firestore query of "rooms" collection
         ArrayList<RoomItem> rooms = new ArrayList<>();
         rooms.add(new RoomItem("bb1_room_1", "BB1 Room #1", "4 machines available"));
@@ -40,4 +73,5 @@ public class MainActivity extends AppCompatActivity {
 
         recyclerRooms.setAdapter(roomAdapter);
     }
+
 }
