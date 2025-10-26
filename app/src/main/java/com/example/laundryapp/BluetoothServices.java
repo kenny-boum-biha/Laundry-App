@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
  * BluetoothService simulates reading vibration data from a Bluetooth sensor
  * and updates the Firestore database with the machine status.
  *
- * Later, you can replace the simulated data with real Bluetooth input.
+ * Later, replace the simulated data with real Bluetooth input.
  */
 public class BluetoothServices {
 
