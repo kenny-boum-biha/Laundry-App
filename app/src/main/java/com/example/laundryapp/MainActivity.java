@@ -49,18 +49,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onStart() {
         super.onStart();
-        //Check if user is logged in, if so, update server side data
         FirebaseUser currentUser = mAuth.getCurrentUser();
-        if(currentUser != null){
+        if (currentUser != null) {
             currentUser.reload();
         }
 
-        // Firestore test
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-        /*Map<String, Object> testData = new HashMap<>();
-        testData.put("message", "Hello Firebase!");
-        testData.put("timestamp", System.currentTimeMillis()); */
 
         new Timer().schedule(new TimerTask() {
             @Override
@@ -68,16 +62,14 @@ public class MainActivity extends AppCompatActivity {
                 Map<String, Object> testData = new HashMap<>();
                 testData.put("message", "Hello Firebase!");
                 testData.put("timestamp", System.currentTimeMillis());
-                db.collection("test").document("ping").set(testData);
+
                 db.collection("test")
                         .document("ping")
                         .set(testData)
                         .addOnSuccessListener(aVoid -> Log.d("FirebaseTest", "Test document written successfully"))
                         .addOnFailureListener(e -> Log.e("FirebaseTest", "Failed to write test document", e));
-
-
             }
-        }, 0, 5000); // every 5 seconds
+        }, 0, 5000);
 
         // TODO: later replace this with Firestore query of "rooms" collection
         ArrayList<RoomItem> rooms = new ArrayList<>();
@@ -86,17 +78,18 @@ public class MainActivity extends AppCompatActivity {
 
         roomAdapter = new RoomAdapter(rooms, room -> {
             Intent roomActivityIntent = new Intent(MainActivity.this, RoomActivity.class);
-            if(currentUser != null){
+            if (currentUser != null) {
                 roomActivityIntent.putExtra("roomId", room.roomId);
                 roomActivityIntent.putExtra("roomTitle", room.title);
                 startActivity(roomActivityIntent);
-            }
-            else{
+            } else {
                 goToLoginActivity();
             }
+        });
 
         recyclerRooms.setAdapter(roomAdapter);
-        signOutButton.setOnClickListener(new View.OnClickListener(){
+
+        signOutButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 mAuth.signOut();
@@ -105,8 +98,10 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
     public void goToLoginActivity(){
         Intent intent = new Intent(getApplicationContext(), loginActivity.class);
         startActivity(intent);
     }
 }
+
