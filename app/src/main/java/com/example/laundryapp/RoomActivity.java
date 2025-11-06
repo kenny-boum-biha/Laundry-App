@@ -52,6 +52,7 @@ public class RoomActivity extends AppCompatActivity {
         recyclerMachines = findViewById(R.id.recyclerMachines);
         textNoReservations = findViewById(R.id.textNoReservations);
 
+
         // Grid of 2 columns
         recyclerMachines.setLayoutManager(new GridLayoutManager(this, 2));
 
