@@ -31,7 +31,7 @@ public class MachineAdapter extends RecyclerView.Adapter<MachineAdapter.MachineV
     public void onBindViewHolder(@NonNull MachineViewHolder holder, int position) {
         MachineItem m = machines.get(position);
 
-        holder.machineName.setText(m.name);
+        holder.machineName.setText(m.label);
         holder.machineStatus.setText(m.status);
 
         // icon logic based on machine type

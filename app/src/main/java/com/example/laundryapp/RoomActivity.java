@@ -31,6 +31,7 @@ public class RoomActivity extends AppCompatActivity {
     private FirebaseFirestore firestore;
 
     private String roomId;
+    private String locationID;
 
 
     @Override
@@ -38,7 +39,8 @@ public class RoomActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_room);
 
-        roomId   = getIntent().getStringExtra("roomId");   // ex: "bb1_room_1"
+        locationID  = getIntent().getStringExtra("locationID");
+        roomId  = getIntent().getStringExtra("roomId");   // ex: "bb1_room_1"
         String roomName = getIntent().getStringExtra("roomTitle"); // ex: "BB1 Room #1"
         if (roomName == null) roomName = "Laundry Room";
 
@@ -59,10 +61,10 @@ public class RoomActivity extends AppCompatActivity {
 
         // --- Initial mock machine list (for UI before Firebase updates) ---
         machines = new ArrayList<>();
-        machines.add(new MachineItem("Washer 1", "idle", "washer", 0));
-        machines.add(new MachineItem("Dryer 1", "idle", "dryer", 0));
-        machines.add(new MachineItem("Washer 2", "idle", "washer", 0));
-        machines.add(new MachineItem("Dryer 2", "idle", "dryer", 0));
+        machines.add(new MachineItem("machine_1","Washer 1", "idle", "washer", 0));
+        machines.add(new MachineItem("machine_2","Dryer 1", "idle", "dryer", 0));
+        machines.add(new MachineItem("machine_3","Washer 2", "idle", "washer", 0));
+        machines.add(new MachineItem("machine_4","Dryer 2", "idle", "dryer", 0));
 
         machineAdapter = new MachineAdapter(machines);
         recyclerMachines.setAdapter(machineAdapter);
@@ -78,12 +80,12 @@ public class RoomActivity extends AppCompatActivity {
         super.onStart();
 
         // Start simulated BluetoothService for each machine
-        bluetoothService = new BluetoothServices(5000L); // every 5s
 
         for (MachineItem machine : machines) {
+            bluetoothService = new BluetoothServices(5000L); // every 5s
             // Use machine name as document ID in Firestore
-            String machineId = machine.name.replaceAll("\\s+", "_"); // e.g., "Washer 1" -> "Washer_1"
-            bluetoothService.startReading(roomId, machineId);
+            String machineId = machine.machineID.replaceAll("\\s+", "_"); // e.g., "Washer 1" -> "Washer_1"
+            bluetoothService.startReading(locationID, roomId, machineId, machine.label);
         }
     }
 
@@ -104,7 +106,9 @@ public class RoomActivity extends AppCompatActivity {
 
     // --- Firestore listener ---
     private void listenToMachineUpdates() {
-        firestore.collection("rooms")
+        firestore.collection("locations")
+                .document(locationID)
+                .collection("rooms")
                 .document(roomId)
                 .collection("machines")
                 .addSnapshotListener(new EventListener<QuerySnapshot>() {
@@ -119,11 +123,11 @@ public class RoomActivity extends AppCompatActivity {
 
                                 // Update local machine list
                                 for (MachineItem m : machines) {
-                                    String machineId = m.name.replaceAll("\\s+", "_");
+                                    String machineId = m.machineID.replaceAll("\\s+", "_");
                                     if (machineId.equals(id)) {
                                         // Replace old MachineItem with updated status
                                         machines.set(machines.indexOf(m),
-                                                new MachineItem(m.name, status, m.type, m.iconResId));
+                                                new MachineItem(m.machineID, m.label, status, m.type, m.iconResId));
                                         machineAdapter.notifyItemChanged(machines.indexOf(m));
                                         break;
                                     }

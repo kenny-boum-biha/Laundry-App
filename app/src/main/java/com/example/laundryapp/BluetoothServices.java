@@ -39,7 +39,7 @@ public class BluetoothServices {
      * @param roomId     Firestore document ID for the room
      * @param machineId  Firestore document ID for the machine
      */
-    public void startReading(String roomId, String machineId) {
+    public void startReading(String locationID, String roomId, String machineId, String machineLabel) {
         if (running) return;
         running = true;
 
@@ -54,14 +54,25 @@ public class BluetoothServices {
                 // --- Simulated vibration data ---
                 double vibration = 0.5 + random.nextDouble() * 3.5; // between 0.5 and 4.0
                 boolean isRunning = vibration > 2.0; // arbitrary threshold
+                String status;
+                if(isRunning){
+                    status = "Running";
+                }
+                else{
+                    status = "Idle";
+                }
 
                 // --- Update Firestore ---
                 Map<String, Object> data = new HashMap<>();
+                data.put("Label", machineLabel);
+                data.put("status", status);
                 data.put("vibration", vibration);
                 data.put("isRunning", isRunning);
                 data.put("timestamp", System.currentTimeMillis());
 
-                db.collection("rooms")
+                db.collection("locations")
+                        .document(locationID)
+                        .collection("rooms")
                         .document(roomId)
                         .collection("machines")
                         .document(machineId)
@@ -74,7 +85,7 @@ public class BluetoothServices {
                     executor.schedule(this, intervalMs, TimeUnit.MILLISECONDS);
                 }
             }
-        }, 0, TimeUnit.MILLISECONDS);
+        }, 1, TimeUnit.MILLISECONDS);
     }
 
     /**

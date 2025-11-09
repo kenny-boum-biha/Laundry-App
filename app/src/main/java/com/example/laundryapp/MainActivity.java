@@ -73,12 +73,13 @@ public class MainActivity extends AppCompatActivity {
 
         // TODO: later replace this with Firestore query of "rooms" collection
         ArrayList<RoomItem> rooms = new ArrayList<>();
-        rooms.add(new RoomItem("bb1_room_1", "BB1 Room #1", "4 machines available"));
-        rooms.add(new RoomItem("bb1_room_2", "BB1 Room #2", "2 machines available"));
+        rooms.add(new RoomItem("location_1","room_3", "Concordia Laundry Room", "4 machines available"));
+       // rooms.add(new RoomItem("location_1","bb1_room_2", "BB1 Room #2", "2 machines available"));
 
         roomAdapter = new RoomAdapter(rooms, room -> {
             Intent roomActivityIntent = new Intent(MainActivity.this, RoomActivity.class);
             if (currentUser != null) {
+                roomActivityIntent.putExtra("locationID", room.locationID);
                 roomActivityIntent.putExtra("roomId", room.roomId);
                 roomActivityIntent.putExtra("roomTitle", room.title);
                 startActivity(roomActivityIntent);
