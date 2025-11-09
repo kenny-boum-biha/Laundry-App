@@ -24,6 +24,9 @@ import com.google.firebase.auth.FirebaseUser;
 
 import java.util.concurrent.TimeUnit;
 
+import android.content.SharedPreferences;
+import android.content.DialogInterface;
+
 
 public class loginActivity extends AppCompatActivity {
     protected EditText editTextPW;
@@ -42,6 +45,7 @@ public class loginActivity extends AppCompatActivity {
             return insets;
         });
         //Get firebase instance
+        FirebaseApp.initializeApp(this);
         mAuth = FirebaseAuth.getInstance();
         FirebaseUser currentUser = mAuth.getCurrentUser();
         editTextPW = findViewById(R.id.editTextPassword);
@@ -119,5 +123,31 @@ public class loginActivity extends AppCompatActivity {
                     }
                 });
         // [END sign_in_with_email]
+    }
+
+    //Consent Popup
+    private void consentForm() {
+        SharedPreferences prefs = getSharedPreferences("consent", MODE_PRIVATE);
+        boolean consent = prefs.getBoolean("consent", false);
+
+        if (consent == false) {//Pops up a dialog box that holds the consent form if the user has not already given consent
+            android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+            builder.setTitle("Privacy Policy");
+            builder.setMessage("Please read the privacy policy before continuing");
+            builder.setMessage("By using our application you are consenting to our privacy policy which includes the collection and use of the personal information you provide to us.");
+            builder.setPositiveButton("Agree", new DialogInterface.OnClickListener() {
+
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i)
+                {
+                    SharedPreferences.Editor editor = prefs.edit();
+                    editor.putBoolean("consent", true);//Set the user as accepting the consent form
+                    editor.apply();
+                }
+
+            });
+            builder.show();
+
+        }
     }
 }

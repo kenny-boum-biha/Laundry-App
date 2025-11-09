@@ -45,7 +45,7 @@
 
             <!-- Toolbar -->
             <androidx.appcompat.widget.Toolbar
-                android:id="@+id/toolbar"
+                android:id="@+id/toolbar_main"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
                 app:popupTheme="@style/ThemeOverlay.Material3.Light"
@@ -90,13 +90,34 @@
         android:padding="16dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/signOutButton"
+
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="horizontal"
         android:layout_gravity="bottom"
-        android:text="Sign Out"
-        android:layout_margin="16dp"
-        app:cornerRadius="16dp" />
+        android:id="@+id/bottom_bottom"
+        android:padding="16dp"
+        android:weightSum="2">
+
+        <!-- Setting Button -->
+        <Button
+            android:id="@+id/button_Setting"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Setting"
+            />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/signOutButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Sign Out"
+            app:cornerRadius="16dp" />
+
+    </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
