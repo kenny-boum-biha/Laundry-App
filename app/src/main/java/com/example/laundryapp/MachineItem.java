@@ -5,6 +5,10 @@ public class MachineItem {
     public final String status;    // e.g. "idle", "running", "done"
     public final String type;      // "washer" or "dryer"
     public final int iconResId;    // we'll choose based on type
+    //Data for machine details
+    public String cycleTime;
+    public String telemetry;
+
 
     public MachineItem(String name, String status, String type, int iconResId) {
         this.name = name;

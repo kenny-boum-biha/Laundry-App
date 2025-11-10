@@ -82,12 +82,14 @@ public class loginActivity extends AppCompatActivity {
                             FirebaseUser user = mAuth.getCurrentUser();
                             Toast.makeText(loginActivity.this, "Authentication Success.",
                                     Toast.LENGTH_SHORT).show();
+
+                            consentForm();//Pop-up the consent form
                             try {
                                 TimeUnit.SECONDS.sleep(2);
                             } catch (InterruptedException e) {
                                 throw new RuntimeException(e);
                             }
-                            finish();
+
                             //updateUI(user);
                         } else {
                             // If sign in fails, display a message to the user.
@@ -109,12 +111,15 @@ public class loginActivity extends AppCompatActivity {
                             FirebaseUser user = mAuth.getCurrentUser();
                             Toast.makeText(loginActivity.this, "Login Success.",
                                     Toast.LENGTH_SHORT).show();
+
+                            consentForm();//Pop-up the consent form
+
                             try {
                                 TimeUnit.SECONDS.sleep(2);
                             } catch (InterruptedException e) {
                                 throw new RuntimeException(e);
                             }
-                            finish();
+
                         } else {
                             // If sign in fails, display a message to the user.
                             Toast.makeText(loginActivity.this, "Authentication failed.",
@@ -133,21 +138,26 @@ public class loginActivity extends AppCompatActivity {
         if (consent == false) {//Pops up a dialog box that holds the consent form if the user has not already given consent
             android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
             builder.setTitle("Privacy Policy");
-            builder.setMessage("Please read the privacy policy before continuing");
-            builder.setMessage("By using our application you are consenting to our privacy policy which includes the collection and use of the personal information you provide to us.");
+            builder.setMessage("Please read the privacy policy before continuing\n" + "By using our application you are consenting to our privacy policy which includes the collection and use of the personal information you provide to us.");
             builder.setPositiveButton("Agree", new DialogInterface.OnClickListener() {
-
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i)
                 {
                     SharedPreferences.Editor editor = prefs.edit();
                     editor.putBoolean("consent", true);//Set the user as accepting the consent form
                     editor.apply();
+
+                    finish();
                 }
-
             });
-            builder.show();
 
+            builder.setCancelable(false);
+            builder.show();
+        }
+        else
+        {
+            finish();
         }
     }
+
 }

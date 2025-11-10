@@ -64,6 +64,9 @@ public class RoomActivity extends AppCompatActivity {
         machines.add(new MachineItem("Washer 2", "idle", "washer", 0));
         machines.add(new MachineItem("Dryer 2", "idle", "dryer", 0));
 
+        //Mock machine for machine details
+        //machines.add(new MachineItem("Washer 3", "idle", "washer", 0));
+
         machineAdapter = new MachineAdapter(machines);
         recyclerMachines.setAdapter(machineAdapter);
 
