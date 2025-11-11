@@ -35,7 +35,6 @@ public class BluetoothServices {
 
     /**
      * Starts periodically simulating vibration readings for a machine.
-     *
      * @param roomId     Firestore document ID for the room
      * @param machineId  Firestore document ID for the machine
      */
@@ -62,23 +61,23 @@ public class BluetoothServices {
                     status = "Idle";
                 }
 
-                // --- Update Firestore ---
-                Map<String, Object> data = new HashMap<>();
-                data.put("Label", machineLabel);
-                data.put("status", status);
-                data.put("vibration", vibration);
-                data.put("isRunning", isRunning);
-                data.put("timestamp", System.currentTimeMillis());
-
-                db.collection("locations")
-                        .document(locationID)
-                        .collection("rooms")
-                        .document(roomId)
-                        .collection("machines")
-                        .document(machineId)
-                        .set(data)
-                        .addOnSuccessListener(aVoid -> Log.d(TAG, "Data updated: " + data))
-                        .addOnFailureListener(e -> Log.e(TAG, "Error updating Firestore", e));
+//                // --- Update Firestore ---
+//                Map<String, Object> data = new HashMap<>();
+//                data.put("Label", machineLabel);
+//                data.put("status", status);
+//                data.put("vibration", vibration);
+//                data.put("isRunning", isRunning);
+//                data.put("timestamp", System.currentTimeMillis());
+//
+//                db.collection("locations")
+//                        .document(locationID)
+//                        .collection("rooms")
+//                        .document(roomId)
+//                        .collection("machines")
+//                        .document(machineId)
+//                        .set(data)
+//                        .addOnSuccessListener(aVoid -> Log.d(TAG, "Data updated: " + data))
+//                        .addOnFailureListener(e -> Log.e(TAG, "Error updating Firestore", e));
 
                 // Reschedule next run
                 if (running) {

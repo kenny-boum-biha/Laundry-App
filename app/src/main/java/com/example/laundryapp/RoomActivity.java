@@ -8,15 +8,20 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -39,8 +44,8 @@ public class RoomActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_room);
 
-        locationID  = getIntent().getStringExtra("locationID");
-        roomId  = getIntent().getStringExtra("roomId");   // ex: "bb1_room_1"
+        locationID = getIntent().getStringExtra("locationID");
+        roomId = getIntent().getStringExtra("roomId");   // ex: "bb1_room_1"
         String roomName = getIntent().getStringExtra("roomTitle"); // ex: "BB1 Room #1"
         if (roomName == null) roomName = "Laundry Room";
 
@@ -60,14 +65,11 @@ public class RoomActivity extends AppCompatActivity {
         firestore = FirebaseFirestore.getInstance();
 
         // --- Initial mock machine list (for UI before Firebase updates) ---
-        machines = new ArrayList<>();
-        machines.add(new MachineItem("machine_1","Washer 1", "idle", "washer", 0));
-        machines.add(new MachineItem("machine_2","Dryer 1", "idle", "dryer", 0));
-        machines.add(new MachineItem("machine_3","Washer 2", "idle", "washer", 0));
-        machines.add(new MachineItem("machine_4","Dryer 2", "idle", "dryer", 0));
-
-        machineAdapter = new MachineAdapter(machines);
-        recyclerMachines.setAdapter(machineAdapter);
+          machines = new ArrayList<>();
+//        machines.add(new MachineItem("machine_1","Washer 1", "idle", "washer", 0));
+//        machines.add(new MachineItem("machine_2","Dryer 1", "idle", "dryer", 0));
+//        machines.add(new MachineItem("machine_3","Washer 2", "idle", "washer", 0));
+//        machines.add(new MachineItem("machine_4","Dryer 2", "idle", "dryer", 0));
 
         textNoReservations.setText("No reservations");
 
@@ -78,15 +80,7 @@ public class RoomActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-
-        // Start simulated BluetoothService for each machine
-
-        for (MachineItem machine : machines) {
-            bluetoothService = new BluetoothServices(5000L); // every 5s
-            // Use machine name as document ID in Firestore
-            String machineId = machine.machineID.replaceAll("\\s+", "_"); // e.g., "Washer 1" -> "Washer_1"
-            bluetoothService.startReading(locationID, roomId, machineId, machine.label);
-        }
+        ReadDatabase();
     }
 
     @Override
@@ -104,7 +98,39 @@ public class RoomActivity extends AppCompatActivity {
         return true;
     }
 
-    // --- Firestore listener ---
+    private void ReadDatabase() {
+        CollectionReference collectionRef = firestore.collection("locations")
+                .document(locationID)
+                .collection("rooms")
+                .document(roomId)
+                .collection("machines");
+        Log.d("DEBUG", "Reading from: locations/" + locationID + "/rooms/" + roomId + "/machines");
+        collectionRef.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()){
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    String id = document.getId();
+                    String status = document.getString("status");
+                    String label = document.getString("Label");
+                    String type = document.getString("type");
+                    MachineItem machine = new MachineItem(id, label, status, type, 0);
+                    machines.add(machine);
+                }
+            }
+            else{
+                Log.e("DEBUG", "Error reading Firestore", task.getException());
+            }
+            machineAdapter = new MachineAdapter(machines);
+            recyclerMachines.setAdapter(machineAdapter);
+//            // Start simulated BluetoothService for each machine
+//            for (MachineItem machine : machines) {
+//                bluetoothService = new BluetoothServices(5000L); // every 5s
+//                // Use machine name as document ID in Firestore
+//                String machineId = machine.machineID.replaceAll("\\s+", "_"); // e.g., "Washer 1" -> "Washer_1"
+//                bluetoothService.startReading(locationID, roomId, machineId, machine.label);
+//            }
+        });
+    }
+
     private void listenToMachineUpdates() {
         firestore.collection("locations")
                 .document(locationID)

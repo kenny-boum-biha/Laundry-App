@@ -55,25 +55,9 @@ public class MainActivity extends AppCompatActivity {
         }
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-        new Timer().schedule(new TimerTask() {
-            @Override
-            public void run() {
-                Map<String, Object> testData = new HashMap<>();
-                testData.put("message", "Hello Firebase!");
-                testData.put("timestamp", System.currentTimeMillis());
-
-                db.collection("test")
-                        .document("ping")
-                        .set(testData)
-                        .addOnSuccessListener(aVoid -> Log.d("FirebaseTest", "Test document written successfully"))
-                        .addOnFailureListener(e -> Log.e("FirebaseTest", "Failed to write test document", e));
-            }
-        }, 0, 5000);
-
         // TODO: later replace this with Firestore query of "rooms" collection
         ArrayList<RoomItem> rooms = new ArrayList<>();
-        rooms.add(new RoomItem("location_1","room_3", "Concordia Laundry Room", "4 machines available"));
+        rooms.add(new RoomItem("location_1","room_1", "Concordia Laundry Room", "4 machines available"));
        // rooms.add(new RoomItem("location_1","bb1_room_2", "BB1 Room #2", "2 machines available"));
 
         roomAdapter = new RoomAdapter(rooms, room -> {
