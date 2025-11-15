@@ -47,6 +47,18 @@ public class MachineAdapter extends RecyclerView.Adapter<MachineAdapter.MachineV
                 holder.machineIcon.setImageResource(android.R.drawable.ic_menu_manage);
             }
         }
+
+        //make it possible to open the machine detail
+        holder.itemView.setOnClickListener(v->
+        {
+            android.content.Intent intent = new android.content.Intent(v.getContext(), MachineDetails.class);
+
+            intent.putExtra("machineName", m.name);
+            intent.putExtra("cycleTime", m.cycleTime);
+            intent.putExtra("telemetry", m.telemetry);
+
+            v.getContext().startActivity(intent);
+        });
     }
 
     @Override

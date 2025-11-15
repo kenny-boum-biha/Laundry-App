@@ -14,6 +14,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.HashMap;
 import java.util.Map;
 import android.util.Log;
+
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -30,22 +31,26 @@ public class MainActivity extends AppCompatActivity {
     private RoomAdapter roomAdapter;
     protected Button signOutButton;
     private FirebaseAuth mAuth;
+    private Button settingButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Toolbar toolbar = findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar_main);
         setSupportActionBar(toolbar);
 
         recyclerRooms = findViewById(R.id.recyclerRooms);
         signOutButton = findViewById(R.id.signOutButton);
         recyclerRooms.setLayoutManager(new LinearLayoutManager(this));
+        settingButton = findViewById(R.id.button_Setting);
+
         //Initializing the database
         mAuth = FirebaseAuth.getInstance();
 
     }
+
     @Override
     public void onStart() {
         super.onStart();
@@ -97,10 +102,22 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(getIntent());
             }
         });
+
+        //Opening the setting activity by calling the goToSettingActivity method
+        settingButton.setOnClickListener(v -> goToSettingActivity());
+
     }
 
     public void goToLoginActivity(){
         Intent intent = new Intent(getApplicationContext(), loginActivity.class);
+        startActivity(intent);
+    }
+
+    //Method to from Main to Setting
+    public void goToSettingActivity()
+    {
+        //Button Listener to go from MainActivity to SettingActivity
+        Intent intent = new Intent(MainActivity.this, SettingActivity.class);
         startActivity(intent);
     }
 }
