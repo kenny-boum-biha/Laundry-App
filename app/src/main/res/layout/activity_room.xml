@@ -36,6 +36,8 @@
                 android:layout_marginEnd="4dp"
                 android:text="All"
                 android:textSize="12sp"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
                 android:backgroundTint="#6200EE" />
 
             <Button
@@ -47,6 +49,8 @@
                 android:layout_marginEnd="4dp"
                 android:text="Running"
                 android:textSize="12sp"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
                 android:backgroundTint="#757575" />
 
             <Button
@@ -58,6 +62,8 @@
                 android:layout_marginEnd="4dp"
                 android:text="Idle"
                 android:textSize="12sp"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
                 android:backgroundTint="#757575" />
 
             <Button
@@ -68,6 +74,8 @@
                 android:layout_marginStart="4dp"
                 android:text="Finished"
                 android:textSize="12sp"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
                 android:backgroundTint="#757575" />
 
         </LinearLayout>
