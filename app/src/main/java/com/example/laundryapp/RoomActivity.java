@@ -142,7 +142,10 @@ public class RoomActivity extends AppCompatActivity {
         filteredMachines.clear();
 
         for (MachineItem machine : machines) {
-            String status = machine.status != null ? machine.status.toLowerCase() : "";
+            // Normalize status: treat null/empty as "idle" (same as display logic)
+            String status = machine.status != null && !machine.status.isEmpty() 
+                    ? machine.status.toLowerCase() 
+                    : "idle";
             boolean shouldInclude = false;
 
             switch (filter) {
@@ -225,24 +228,24 @@ public class RoomActivity extends AppCompatActivity {
                                 String id = dc.getDocument().getId();
                                 String status = dc.getDocument().getString("status");
                                 
-                                // Default to "idle" if status is null or empty
-                                if (status == null || status.isEmpty()) {
-                                    status = "idle";
-                                }
-
-                                // Update local machine list
-                                for (int i = 0; i < machines.size(); i++) {
-                                    MachineItem m = machines.get(i);
-                                    String machineId = m.name.replaceAll("\\s+", "_");
-                                    if (machineId.equals(id)) {
-                                        // Replace old MachineItem with updated status
-                                        machines.set(i, new MachineItem(m.name, status, m.type, m.iconResId));
-                                        
-                                        // Reapply current filter to update filtered list
-                                        applyFilter(currentFilter);
-                                        break;
+                                // Only update if Firestore has an explicit status field
+                                // This preserves the mock data status if Firestore doesn't provide one
+                                if (status != null && !status.isEmpty()) {
+                                    // Update local machine list
+                                    for (int i = 0; i < machines.size(); i++) {
+                                        MachineItem m = machines.get(i);
+                                        String machineId = m.name.replaceAll("\\s+", "_");
+                                        if (machineId.equals(id)) {
+                                            // Replace old MachineItem with updated status
+                                            machines.set(i, new MachineItem(m.name, status, m.type, m.iconResId));
+                                            
+                                            // Reapply current filter to update filtered list
+                                            applyFilter(currentFilter);
+                                            break;
+                                        }
                                     }
                                 }
+                                // If status is null/empty, ignore this update and keep mock data status
                             }
                         }
                     }
