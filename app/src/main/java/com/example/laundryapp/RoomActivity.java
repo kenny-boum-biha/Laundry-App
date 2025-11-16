@@ -224,6 +224,11 @@ public class RoomActivity extends AppCompatActivity {
                             for (DocumentChange dc : value.getDocumentChanges()) {
                                 String id = dc.getDocument().getId();
                                 String status = dc.getDocument().getString("status");
+                                
+                                // Default to "idle" if status is null or empty
+                                if (status == null || status.isEmpty()) {
+                                    status = "idle";
+                                }
 
                                 // Update local machine list
                                 for (int i = 0; i < machines.size(); i++) {
