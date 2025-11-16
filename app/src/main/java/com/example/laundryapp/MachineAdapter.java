@@ -32,7 +32,9 @@ public class MachineAdapter extends RecyclerView.Adapter<MachineAdapter.MachineV
         MachineItem m = machines.get(position);
 
         holder.machineName.setText(m.name);
-        holder.machineStatus.setText(m.status);
+        // Handle null or empty status - default to "idle" if not set
+        String status = (m.status != null && !m.status.isEmpty()) ? m.status : "idle";
+        holder.machineStatus.setText(status);
 
         // icon logic based on machine type
         if (m.iconResId != 0) {
