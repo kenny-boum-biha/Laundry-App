@@ -19,6 +19,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.LaundryApp">
         <activity
+            android:name=".LocationActivity"
+            android:exported="false" />
+        <activity
             android:name=".MachineDetails"
             android:exported="false" />
         <activity
