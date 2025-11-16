@@ -77,8 +77,10 @@ public class RoomActivity extends AppCompatActivity {
         machines = new ArrayList<>();
         machines.add(new MachineItem("Washer 1", "idle", "washer", 0));
         machines.add(new MachineItem("Dryer 1", "idle", "dryer", 0));
-        machines.add(new MachineItem("Washer 2", "idle", "washer", 0));
-        machines.add(new MachineItem("Dryer 2", "idle", "dryer", 0));
+        machines.add(new MachineItem("Washer 2", "running", "washer", 0));
+        machines.add(new MachineItem("Dryer 2", "running", "dryer", 0));
+        machines.add(new MachineItem("Washer 3", "finished", "washer", 0));
+        machines.add(new MachineItem("Dryer 3", "finished", "dryer", 0));
 
         //Mock machine for machine details
         //machines.add(new MachineItem("Washer 3", "idle", "washer", 0));
