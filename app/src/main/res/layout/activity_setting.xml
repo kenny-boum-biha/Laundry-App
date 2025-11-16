@@ -18,7 +18,7 @@
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        android:label="Setting"
+        android:label="Settings"
         />
 
     <LinearLayout
@@ -55,7 +55,57 @@
             android:paddingVertical="8dp"
             android:text="Language" />
 
+
+        <Button
+            android:id="@+id/Location_Button"
+            android:layout_width="256dp"
+            android:layout_height="64dp"
+            android:text="Locations"
+            android:layout_gravity="center_horizontal"
+            />
+
+        <Button
+            android:layout_width="256dp"
+            android:layout_height="64dp"
+            android:id="@+id/Change_Password_Button"
+            android:text="Change Password"
+            android:layout_gravity="center_horizontal"
+            />
+
     </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingVertical="8dp"
+        android:minHeight="48dp"
+        android:gravity="center_horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toolbar_main">
+
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/TextView_Email"
+            android:text="Email: "
+            android:textStyle="bold"
+
+            />
+        <TextView
+            android:id="@+id/Actual_Email"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="test"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:gravity="end"
+            android:textAlignment="textEnd" />
+
+</LinearLayout>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

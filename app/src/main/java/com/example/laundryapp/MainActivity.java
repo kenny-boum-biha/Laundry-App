@@ -113,7 +113,7 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    //Method to from Main to Setting
+    //Method to from Main to Settings
     public void goToSettingActivity()
     {
         //Button Listener to go from MainActivity to SettingActivity
