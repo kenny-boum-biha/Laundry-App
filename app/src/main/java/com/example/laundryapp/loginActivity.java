@@ -18,15 +18,20 @@ import androidx.core.view.WindowInsetsCompat;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.Timestamp;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.concurrent.TimeUnit;
 
 import android.content.SharedPreferences;
 import android.content.DialogInterface;
 
+import java.util.Map;
+import java.util.HashMap;
+import com.google.firebase.firestore.FieldValue;
 
 public class loginActivity extends AppCompatActivity {
     protected EditText editTextPW;
@@ -80,10 +85,12 @@ public class loginActivity extends AppCompatActivity {
                         if (task.isSuccessful()) {
                             // Sign in success, update UI with the signed-in user's information
                             FirebaseUser user = mAuth.getCurrentUser();
+
                             Toast.makeText(loginActivity.this, "Authentication Success.",
                                     Toast.LENGTH_SHORT).show();
 
                             consentForm();//Pop-up the consent form
+
                             try {
                                 TimeUnit.SECONDS.sleep(2);
                             } catch (InterruptedException e) {
