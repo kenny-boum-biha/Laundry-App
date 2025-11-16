@@ -14,6 +14,14 @@ import android.widget.Switch;
 
 import androidx.appcompat.app.AppCompatDelegate;//Import to default dark mode
 
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import android.widget.EditText;
+import com.google.firebase.auth.FirebaseAuth;
+import android.content.Intent;
+import android.widget.TextView;
+import com.google.firebase.auth.FirebaseUser;
+
 public class SettingActivity extends AppCompatActivity {
     //Variables to check if the switch are on or off
     private boolean DarkModeON;
@@ -27,12 +35,30 @@ public class SettingActivity extends AppCompatActivity {
     private SharedPreferences PrefDarkMode;
     private SharedPreferences.Editor editor;
 
+    //Adding the location variables
+    private FirebaseAuth mAuth;
+    private FirebaseFirestore db;
+    private EditText editTextPW;
+    private Button Location_Button;
+
+    //Adding the email variables
+    private TextView Actual_Email;
     //-----------------------------------------------------------------------------------------------------------------------------------------------
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_setting);
+
+        //Get firebase instance
+        mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
+        Location_Button = findViewById(R.id.Location_Button);
+
+        //Get the email textview
+        Actual_Email = findViewById(R.id.Actual_Email);
+        showEmail();
+        
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -90,6 +116,14 @@ public class SettingActivity extends AppCompatActivity {
             }
             saveSetting();//Calls the method to save the settings
         });
+
+        //Button for location
+        Location_Button = findViewById(R.id.Location_Button);
+        Location_Button.setOnClickListener(v1 -> {
+            Intent intent = new Intent(SettingActivity.this, LocationActivity.class);
+            startActivity(intent);
+        });
+
     }
     //-----------------------------------------------------------------------------------------------------------------------------
     private void saveSetting()
@@ -106,5 +140,20 @@ public class SettingActivity extends AppCompatActivity {
         finish();
         return true;
     }
+    //-----------------------------------------------------------------------------------------------------------------------------
+    private void showEmail()
+    {//Show email of the user on the setting activity
+        FirebaseUser user = mAuth.getCurrentUser();
+
+        if (user != null) {
+            String email = user.getEmail();
+            Actual_Email.setText(email);
+        }
+        else {
+            Actual_Email.setText("No Email in database or not logged in");
+        }
+
+    }
+
 }
 
