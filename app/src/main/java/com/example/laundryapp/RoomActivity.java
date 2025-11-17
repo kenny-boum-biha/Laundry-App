@@ -1,25 +1,35 @@
 package com.example.laundryapp;
 
+import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
+import android.os.Build;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
 
+import androidx.annotation.RequiresPermission;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
-import android.util.Log;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import androidx.annotation.Nullable;
 
@@ -35,6 +45,7 @@ public class RoomActivity extends AppCompatActivity {
 
     private String roomId;
     private String currentFilter = "all"; // "all", "running", "idle", "finished"
+    private String locationID;
 
     // Filter buttons
     private Button buttonFilterAll;
@@ -47,7 +58,14 @@ public class RoomActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_room);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
 
+                requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
+            }
+        }
+
+        locationID = getIntent().getStringExtra("locationID");
         roomId   = getIntent().getStringExtra("roomId");   // ex: "bb1_room_1"
         String roomName = getIntent().getStringExtra("roomTitle"); // ex: "BB1 Room #1"
         if (roomName == null) roomName = "Laundry Room";
@@ -75,10 +93,6 @@ public class RoomActivity extends AppCompatActivity {
 
         // --- Initial mock machine list (for UI before Firebase updates) ---
         machines = new ArrayList<>();
-        machines.add(new MachineItem("Washer 1", "idle", "washer", 0));
-        machines.add(new MachineItem("Dryer 1", "idle", "dryer", 0));
-        machines.add(new MachineItem("Washer 2", "idle", "washer", 0));
-        machines.add(new MachineItem("Dryer 2", "idle", "dryer", 0));
 
         //Mock machine for machine details
         //machines.add(new MachineItem("Washer 3", "idle", "washer", 0));
@@ -99,18 +113,20 @@ public class RoomActivity extends AppCompatActivity {
         listenToMachineUpdates();
     }
 
+    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
     @Override
     protected void onStart() {
         super.onStart();
+        ReadDatabase();
 
         // Start simulated BluetoothService for each machine
-        bluetoothService = new BluetoothServices(5000L); // every 5s
-
-        for (MachineItem machine : machines) {
-            // Use machine name as document ID in Firestore
-            String machineId = machine.name.replaceAll("\\s+", "_"); // e.g., "Washer 1" -> "Washer_1"
-            bluetoothService.startReading(roomId, machineId);
-        }
+//        bluetoothService = new BluetoothServices(5000L); // every 5s
+//
+//        for (MachineItem machine : machines) {
+//            // Use machine name as document ID in Firestore
+//            String machineId = machine.name.replaceAll("\\s+", "_"); // e.g., "Washer 1" -> "Washer_1"
+//           bluetoothService.startReading(roomId, machineId);
+//        }
     }
 
     @Override
@@ -126,6 +142,61 @@ public class RoomActivity extends AppCompatActivity {
     public boolean onSupportNavigateUp() {
         finish();
         return true;
+    }
+
+    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
+    private void ReadDatabase() {
+        AtomicBoolean firstReadFlag = new AtomicBoolean(true);
+        CollectionReference collectionRef = firestore.collection("locations")
+                .document(locationID)
+                .collection("rooms")
+                .document(roomId)
+                .collection("machines");
+        collectionRef.addSnapshotListener((snapshots, e) -> {
+            machines.clear();
+                for (QueryDocumentSnapshot document : snapshots) {
+                    String id = document.getId();
+                    String state = document.getString("state"); //Can be free, InProgress or Finished
+                    String label = document.getString("label");
+                    Map<String, Object> telemetry = (Map<String, Object>) document.get("telemetry");
+                    String status = Objects.requireNonNull(telemetry.get("status")).toString();
+                    String type = document.getString("type");
+                    MachineItem machine = new MachineItem(id, label, status, type, 0);
+                    machines.add(machine);
+                    assert state != null;
+                    if (state.equals("Finished") && !firstReadFlag.get()) {
+                        displayCompletionNotification("MACHINE UPDATE", label + " is finished.");
+                    }
+                    if(firstReadFlag.get()){
+                        firstReadFlag.set(false);
+                    }
+
+                }
+            machineAdapter = new MachineAdapter(machines);
+            recyclerMachines.setAdapter(machineAdapter);
+        });
+    }
+
+    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
+    private void displayCompletionNotification(String title, String message){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+        {
+            String channelId = "default_channel";
+            NotificationChannel channel = new NotificationChannel(
+                    channelId,
+                    "Machine Updates",
+                    NotificationManager.IMPORTANCE_HIGH);
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default_channel")
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setContentTitle(title)
+                .setContentText(message)
+                .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_HIGH);
+        NotificationManagerCompat manager = NotificationManagerCompat.from(this);
+        manager.notify((int) System.currentTimeMillis(), builder.build());
     }
 
     // --- Filter button setup ---
@@ -215,7 +286,9 @@ public class RoomActivity extends AppCompatActivity {
 
     // --- Firestore listener ---
     private void listenToMachineUpdates() {
-        firestore.collection("rooms")
+        firestore.collection("locations")
+                .document(locationID)
+                .collection("rooms")
                 .document(roomId)
                 .collection("machines")
                 .addSnapshotListener(new EventListener<QuerySnapshot>() {
@@ -237,7 +310,7 @@ public class RoomActivity extends AppCompatActivity {
                                         String machineId = m.name.replaceAll("\\s+", "_");
                                         if (machineId.equals(id)) {
                                             // Replace old MachineItem with updated status
-                                            machines.set(i, new MachineItem(m.name, status, m.type, m.iconResId));
+                                            machines.set(i, new MachineItem(m.machineID, m.name, status, m.type, m.iconResId));
                                             
                                             // Reapply current filter to update filtered list
                                             applyFilter(currentFilter);

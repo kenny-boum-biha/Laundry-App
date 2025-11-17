@@ -1,6 +1,7 @@
 package com.example.laundryapp;
 
 public class MachineItem {
+    public final String machineID;
     public final String name;      // e.g. "Washer 1"
     public final String status;    // e.g. "idle", "running", "done"
     public final String type;      // "washer" or "dryer"
@@ -10,7 +11,8 @@ public class MachineItem {
     public String telemetry;
 
 
-    public MachineItem(String name, String status, String type, int iconResId) {
+    public MachineItem(String machineID, String name, String status, String type, int iconResId) {
+        this.machineID = machineID;
         this.name = name;
         this.status = status;
         this.type = type;
