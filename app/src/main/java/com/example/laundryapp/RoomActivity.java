@@ -186,6 +186,7 @@ public class RoomActivity extends AppCompatActivity {
                     channelId,
                     "Machine Updates",
                     NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription("Notifies when machine has completed its task");
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
         }
