@@ -138,7 +138,7 @@ public class LocationActivity extends AppCompatActivity {
 
                                         String Current_Location = "Current Location: " + Location_Name + "\nCurrent Address: " + Location_Address;
                                         Toast.makeText(LocationActivity.this, "Location changed to " + Location_Name, Toast.LENGTH_LONG).show();
-                                        //Current_Location_TV.setText(Current_Location);
+                                        //Current_Location_TV.setText(Current_Location);uncomment later
                                     }
                                 });
                     });
@@ -147,3 +147,4 @@ public class LocationActivity extends AppCompatActivity {
 
     }
 }
+//Test
