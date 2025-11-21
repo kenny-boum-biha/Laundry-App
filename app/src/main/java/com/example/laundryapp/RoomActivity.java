@@ -34,6 +34,8 @@ public class RoomActivity extends AppCompatActivity {
     private FirebaseFirestore firestore;
 
     private String roomId;
+
+    private String locationId;
     private String currentFilter = "all"; // "all", "running", "idle", "finished"
 
     // Filter buttons
@@ -42,6 +44,8 @@ public class RoomActivity extends AppCompatActivity {
     private Button buttonFilterIdle;
     private Button buttonFilterFinished;
 
+    private com.google.firebase.firestore.ListenerRegistration machinesListener;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +53,7 @@ public class RoomActivity extends AppCompatActivity {
         setContentView(R.layout.activity_room);
 
         roomId   = getIntent().getStringExtra("roomId");   // ex: "bb1_room_1"
+        locationId = getIntent().getStringExtra("locationID");
         String roomName = getIntent().getStringExtra("roomTitle"); // ex: "BB1 Room #1"
         if (roomName == null) roomName = "Laundry Room";
 
@@ -75,16 +80,13 @@ public class RoomActivity extends AppCompatActivity {
 
         // --- Initial mock machine list (for UI before Firebase updates) ---
         machines = new ArrayList<>();
-        machines.add(new MachineItem("Washer 1", "idle", "washer", 0));
-        machines.add(new MachineItem("Dryer 1", "idle", "dryer", 0));
-        machines.add(new MachineItem("Washer 2", "idle", "washer", 0));
-        machines.add(new MachineItem("Dryer 2", "idle", "dryer", 0));
+        filteredMachines = new ArrayList<>();
 
         //Mock machine for machine details
         //machines.add(new MachineItem("Washer 3", "idle", "washer", 0));
 
         filteredMachines = new ArrayList<>(machines);
-        machineAdapter = new MachineAdapter(filteredMachines);
+        machineAdapter = new MachineAdapter(filteredMachines, locationId, roomId);
         recyclerMachines.setAdapter(machineAdapter);
 
         textNoReservations.setText("No reservations");
@@ -119,6 +121,10 @@ public class RoomActivity extends AppCompatActivity {
         if (bluetoothService != null) {
             bluetoothService.stopReading();
             bluetoothService = null;
+        }
+        if (machinesListener != null) {
+            machinesListener.remove();
+            machinesListener = null;
         }
     }
 
@@ -215,41 +221,72 @@ public class RoomActivity extends AppCompatActivity {
 
     // --- Firestore listener ---
     private void listenToMachineUpdates() {
-        firestore.collection("rooms")
+        if (locationId == null || roomId == null) {
+            Log.e("RoomActivity", "ERROR: LocationID or RoomID is NULL. Check MainActivity.");
+            return;
+        }
+
+        machinesListener = firestore.collection("locations")
+                .document(locationId)
+                .collection("rooms")
                 .document(roomId)
                 .collection("machines")
-                .addSnapshotListener(new EventListener<QuerySnapshot>() {
-                    @Override
-                    public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
-                        if (error != null) return;
+                .addSnapshotListener((value, error) -> {
+                    if (error != null) {
+                        Log.e("RoomActivity", "Firestore Listen Failed", error);
+                        return;
+                    }
 
-                        if (value != null) {
-                            for (DocumentChange dc : value.getDocumentChanges()) {
-                                String id = dc.getDocument().getId();
-                                String status = dc.getDocument().getString("status");
-                                
-                                // Only update if Firestore has an explicit status field
-                                // This preserves the mock data status if Firestore doesn't provide one
-                                if (status != null && !status.isEmpty()) {
-                                    // Update local machine list
-                                    for (int i = 0; i < machines.size(); i++) {
-                                        MachineItem m = machines.get(i);
-                                        String machineId = m.name.replaceAll("\\s+", "_");
-                                        if (machineId.equals(id)) {
-                                            // Replace old MachineItem with updated status
-                                            machines.set(i, new MachineItem(m.name, status, m.type, m.iconResId));
-                                            
-                                            // Reapply current filter to update filtered list
-                                            applyFilter(currentFilter);
-                                            break;
+                    if (value != null) {
+                        boolean hasChanges = false;
+
+                        for (DocumentChange dc : value.getDocumentChanges()) {
+                            try {
+                                // 1. Try to convert data
+                                MachineItem machine = dc.getDocument().toObject(MachineItem.class);
+
+                                // 2. Log what we found (Check Logcat!)
+                                Log.d("RoomActivity", "Found Machine: " + machine.name + " (ID: " + machine.id + ")");
+
+                                switch (dc.getType()) {
+                                    case ADDED:
+                                        machines.add(machine);
+                                        hasChanges = true;
+                                        break;
+
+                                    case MODIFIED:
+                                        for (int i = 0; i < machines.size(); i++) {
+                                            // Use explicit null checks
+                                            if (machines.get(i).id != null && machines.get(i).id.equals(machine.id)) {
+                                                machines.set(i, machine);
+                                                hasChanges = true;
+                                                break;
+                                            }
                                         }
-                                    }
+                                        break;
+
+                                    case REMOVED:
+                                        for (int i = 0; i < machines.size(); i++) {
+                                            if (machines.get(i).id != null && machines.get(i).id.equals(machine.id)) {
+                                                machines.remove(i);
+                                                hasChanges = true;
+                                                break;
+                                            }
+                                        }
+                                        break;
                                 }
-                                // If status is null/empty, ignore this update and keep mock data status
+                            } catch (Exception e) {
+                                // This prevents the app from crashing if one machine has bad data
+                                Log.e("RoomActivity", "CRASH PREVENTED: Could not parse machine document: " + dc.getDocument().getId(), e);
                             }
+                        }
+
+                        if (hasChanges) {
+                            applyFilter(currentFilter);
                         }
                     }
                 });
     }
+
 }
 

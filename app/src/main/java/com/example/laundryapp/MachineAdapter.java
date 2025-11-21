@@ -14,9 +14,15 @@ import java.util.List;
 public class MachineAdapter extends RecyclerView.Adapter<MachineAdapter.MachineViewHolder> {
 
     private final List<MachineItem> machines;
+    private final String locationId;
 
-    public MachineAdapter(List<MachineItem> machines) {
+    private final String roomId;
+
+    public MachineAdapter(List<MachineItem> machines, String locationId, String roomId) {
+
         this.machines = machines;
+        this.locationId = locationId;
+        this.roomId = roomId;
     }
 
     @NonNull
@@ -32,9 +38,21 @@ public class MachineAdapter extends RecyclerView.Adapter<MachineAdapter.MachineV
         MachineItem m = machines.get(position);
 
         holder.machineName.setText(m.name);
-        // Handle null or empty status - default to "idle" if not set
         String status = (m.status != null && !m.status.isEmpty()) ? m.status : "idle";
         holder.machineStatus.setText(status);
+
+        holder.itemView.setOnClickListener(v -> {
+            if (v.getContext() instanceof androidx.appcompat.app.AppCompatActivity) {
+                androidx.appcompat.app.AppCompatActivity activity =
+                        (androidx.appcompat.app.AppCompatActivity) v.getContext();
+
+                String fullPath = "locations/" + locationId + "/rooms/" + roomId + "/machines/" + m.id;
+
+                MachineDetailFragment popup = MachineDetailFragment.newInstance(fullPath);
+
+                popup.show(activity.getSupportFragmentManager(), "MachineDetailsPopup");
+            }
+        });
 
         // icon logic based on machine type
         if (m.iconResId != 0) {
@@ -51,16 +69,7 @@ public class MachineAdapter extends RecyclerView.Adapter<MachineAdapter.MachineV
         }
 
         //make it possible to open the machine detail
-        holder.itemView.setOnClickListener(v->
-        {
-            android.content.Intent intent = new android.content.Intent(v.getContext(), MachineDetails.class);
 
-            intent.putExtra("machineName", m.name);
-            intent.putExtra("cycleTime", m.cycleTime);
-            intent.putExtra("telemetry", m.telemetry);
-
-            v.getContext().startActivity(intent);
-        });
     }
 
     @Override

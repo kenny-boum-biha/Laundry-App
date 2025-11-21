@@ -41,8 +41,7 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.RoomViewHolder
         holder.roomTitle.setText(room.title);
         holder.roomSubtitle.setText(room.subtitle);
 
-        // optional: custom icon per room later
-        // holder.roomIcon.setImageResource(android.R.drawable.ic_menu_home);
+
 
         holder.itemView.setOnClickListener(v -> {
             if (listener != null){
