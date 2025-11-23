@@ -5,31 +5,18 @@ import com.google.firebase.firestore.PropertyName;
 import java.util.Map;
 
 public class MachineItem {
+    public final String machineID;
+    public final String name;      // e.g. "Washer 1"
+    public final String status;    // e.g. "idle", "running", "done"
+    public final String type;      // "washer" or "dryer"
+    public final int iconResId;    // we'll choose based on type
+    //Data for machine details
+    public String cycleTime;
+    public String telemetry;
 
 
-    @DocumentId
-    public String id;           // e.g. "machine_1"
-
-    @PropertyName("label")
-    public String name;         // e.g. "Washer 1"
-
-    @PropertyName("state")
-    public String status;       // e.g. "Finished"
-
-    public String type;         // e.g. "washer"
-    public String sensor;       // e.g. "ESP32-001" (THIS WAS MISSING)
-
-    public Map<String, Object> telemetry; // Nested data
-
-    public int iconResId;       // Internal use, likely 0 from DB
-
-    // --- CONSTRUCTORS ---
-
-    // 1. REQUIRED: Empty constructor for Firestore
-    public MachineItem() {}
-
-    // 2. Manual constructor
-    public MachineItem(String name, String status, String type, String sensor) {
+    public MachineItem(String machineID, String name, String status, String type, int iconResId) {
+        this.machineID = machineID;
         this.name = name;
         this.status = status;
         this.type = type;

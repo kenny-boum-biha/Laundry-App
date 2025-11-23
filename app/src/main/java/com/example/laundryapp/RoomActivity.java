@@ -1,25 +1,35 @@
 package com.example.laundryapp;
 
+import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
+import android.os.Build;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
 
+import androidx.annotation.RequiresPermission;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
-import android.util.Log;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import androidx.annotation.Nullable;
 
@@ -34,6 +44,14 @@ public class RoomActivity extends AppCompatActivity {
     private FirebaseFirestore firestore;
 
     private String roomId;
+    private String currentFilter = "all"; // "all", "running", "idle", "finished"
+    private String locationID;
+
+    // Filter buttons
+    private Button buttonFilterAll;
+    private Button buttonFilterRunning;
+    private Button buttonFilterIdle;
+    private Button buttonFilterFinished;
 
     private String locationId;
     private String currentFilter = "all"; // "all", "running", "idle", "finished"
@@ -51,7 +69,14 @@ public class RoomActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_room);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
 
+                requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
+            }
+        }
+
+        locationID = getIntent().getStringExtra("locationID");
         roomId   = getIntent().getStringExtra("roomId");   // ex: "bb1_room_1"
         locationId = getIntent().getStringExtra("locationID");
         String roomName = getIntent().getStringExtra("roomTitle"); // ex: "BB1 Room #1"
@@ -80,13 +105,12 @@ public class RoomActivity extends AppCompatActivity {
 
         // --- Initial mock machine list (for UI before Firebase updates) ---
         machines = new ArrayList<>();
-        filteredMachines = new ArrayList<>();
 
         //Mock machine for machine details
         //machines.add(new MachineItem("Washer 3", "idle", "washer", 0));
 
         filteredMachines = new ArrayList<>(machines);
-        machineAdapter = new MachineAdapter(filteredMachines, locationId, roomId);
+        machineAdapter = new MachineAdapter(filteredMachines);
         recyclerMachines.setAdapter(machineAdapter);
 
         textNoReservations.setText("No reservations");
@@ -101,18 +125,20 @@ public class RoomActivity extends AppCompatActivity {
         listenToMachineUpdates();
     }
 
+    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
     @Override
     protected void onStart() {
         super.onStart();
+        ReadDatabase();
 
         // Start simulated BluetoothService for each machine
-        bluetoothService = new BluetoothServices(5000L); // every 5s
-
-        for (MachineItem machine : machines) {
-            // Use machine name as document ID in Firestore
-            String machineId = machine.name.replaceAll("\\s+", "_"); // e.g., "Washer 1" -> "Washer_1"
-            bluetoothService.startReading(roomId, machineId);
-        }
+//        bluetoothService = new BluetoothServices(5000L); // every 5s
+//
+//        for (MachineItem machine : machines) {
+//            // Use machine name as document ID in Firestore
+//            String machineId = machine.name.replaceAll("\\s+", "_"); // e.g., "Washer 1" -> "Washer_1"
+//           bluetoothService.startReading(roomId, machineId);
+//        }
     }
 
     @Override
@@ -132,6 +158,62 @@ public class RoomActivity extends AppCompatActivity {
     public boolean onSupportNavigateUp() {
         finish();
         return true;
+    }
+
+    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
+    private void ReadDatabase() {
+        AtomicBoolean firstReadFlag = new AtomicBoolean(true);
+        CollectionReference collectionRef = firestore.collection("locations")
+                .document(locationID)
+                .collection("rooms")
+                .document(roomId)
+                .collection("machines");
+        collectionRef.addSnapshotListener((snapshots, e) -> {
+            machines.clear();
+                for (QueryDocumentSnapshot document : snapshots) {
+                    String id = document.getId();
+                    String state = document.getString("state"); //Can be free, InProgress or Finished
+                    String label = document.getString("label");
+                    Map<String, Object> telemetry = (Map<String, Object>) document.get("telemetry");
+                    String status = Objects.requireNonNull(telemetry.get("status")).toString();
+                    String type = document.getString("type");
+                    MachineItem machine = new MachineItem(id, label, status, type, 0);
+                    machines.add(machine);
+                    assert state != null;
+                    if (state.equals("Finished") && !firstReadFlag.get()) {
+                        displayCompletionNotification("MACHINE UPDATE", label + " is finished.");
+                    }
+                    if(firstReadFlag.get()){
+                        firstReadFlag.set(false);
+                    }
+
+                }
+            machineAdapter = new MachineAdapter(machines);
+            recyclerMachines.setAdapter(machineAdapter);
+        });
+    }
+
+    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
+    private void displayCompletionNotification(String title, String message){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+        {
+            String channelId = "default_channel";
+            NotificationChannel channel = new NotificationChannel(
+                    channelId,
+                    "Machine Updates",
+                    NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription("Notifies when machine has completed its task");
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default_channel")
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setContentTitle(title)
+                .setContentText(message)
+                .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_HIGH);
+        NotificationManagerCompat manager = NotificationManagerCompat.from(this);
+        manager.notify((int) System.currentTimeMillis(), builder.build());
     }
 
     // --- Filter button setup ---
@@ -221,63 +303,39 @@ public class RoomActivity extends AppCompatActivity {
 
     // --- Firestore listener ---
     private void listenToMachineUpdates() {
-        if (locationId == null || roomId == null) {
-            Log.e("RoomActivity", "ERROR: LocationID or RoomID is NULL. Check MainActivity.");
-            return;
-        }
-
-        machinesListener = firestore.collection("locations")
-                .document(locationId)
+        firestore.collection("locations")
+                .document(locationID)
                 .collection("rooms")
                 .document(roomId)
                 .collection("machines")
-                .addSnapshotListener((value, error) -> {
-                    if (error != null) {
-                        Log.e("RoomActivity", "Firestore Listen Failed", error);
-                        return;
-                    }
+                .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                    @Override
+                    public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
+                        if (error != null) return;
 
-                    if (value != null) {
-                        boolean hasChanges = false;
-
-                        for (DocumentChange dc : value.getDocumentChanges()) {
-                            try {
-                                // 1. Try to convert data
-                                MachineItem machine = dc.getDocument().toObject(MachineItem.class);
-
-                                // 2. Log what we found (Check Logcat!)
-                                Log.d("RoomActivity", "Found Machine: " + machine.name + " (ID: " + machine.id + ")");
-
-                                switch (dc.getType()) {
-                                    case ADDED:
-                                        machines.add(machine);
-                                        hasChanges = true;
-                                        break;
-
-                                    case MODIFIED:
-                                        for (int i = 0; i < machines.size(); i++) {
-                                            // Use explicit null checks
-                                            if (machines.get(i).id != null && machines.get(i).id.equals(machine.id)) {
-                                                machines.set(i, machine);
-                                                hasChanges = true;
-                                                break;
-                                            }
+                        if (value != null) {
+                            for (DocumentChange dc : value.getDocumentChanges()) {
+                                String id = dc.getDocument().getId();
+                                String status = dc.getDocument().getString("status");
+                                
+                                // Only update if Firestore has an explicit status field
+                                // This preserves the mock data status if Firestore doesn't provide one
+                                if (status != null && !status.isEmpty()) {
+                                    // Update local machine list
+                                    for (int i = 0; i < machines.size(); i++) {
+                                        MachineItem m = machines.get(i);
+                                        String machineId = m.name.replaceAll("\\s+", "_");
+                                        if (machineId.equals(id)) {
+                                            // Replace old MachineItem with updated status
+                                            machines.set(i, new MachineItem(m.machineID, m.name, status, m.type, m.iconResId));
+                                            
+                                            // Reapply current filter to update filtered list
+                                            applyFilter(currentFilter);
+                                            break;
                                         }
-                                        break;
-
-                                    case REMOVED:
-                                        for (int i = 0; i < machines.size(); i++) {
-                                            if (machines.get(i).id != null && machines.get(i).id.equals(machine.id)) {
-                                                machines.remove(i);
-                                                hasChanges = true;
-                                                break;
-                                            }
-                                        }
-                                        break;
+                                    }
                                 }
-                            } catch (Exception e) {
-                                // This prevents the app from crashing if one machine has bad data
-                                Log.e("RoomActivity", "CRASH PREVENTED: Could not parse machine document: " + dc.getDocument().getId(), e);
+                                // If status is null/empty, ignore this update and keep mock data status
                             }
                         }
 
