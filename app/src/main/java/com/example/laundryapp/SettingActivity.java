@@ -22,6 +22,10 @@ import android.content.Intent;
 import android.widget.TextView;
 import com.google.firebase.auth.FirebaseUser;
 
+import java.util.List;
+import java.util.ArrayList;
+import android.widget.ImageButton;
+
 public class SettingActivity extends AppCompatActivity {
     //Variables to check if the switch are on or off
     private boolean DarkModeON;
@@ -30,30 +34,35 @@ public class SettingActivity extends AppCompatActivity {
     //Switches and button variables
     private Switch DarkModeSwitch;
     private Switch NotificationSwitch;
-    private Button LanguageButton;
     //SharedPreferences
     private SharedPreferences PrefDarkMode;
     private SharedPreferences.Editor editor;
+    private SharedPreferences NotificationPref;
 
     //Adding the location variables
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
-    private EditText editTextPW;
-    private Button Location_Button;
+    private ImageButton Location_Button;
 
     //Adding the email variables
     private TextView Actual_Email;
+    //List of all items
+    private List<SettingItems> List_Of_Items;
     //-----------------------------------------------------------------------------------------------------------------------------------------------
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_setting);
+        //
+        List_Of_Items = new ArrayList<>();
+        List_Of_Items.add(new SettingItems("Change Password", "Change Password"));
+        List_Of_Items.add(new SettingItems("Notification", "Notification"));
+        List_Of_Items.add(new SettingItems("Dark Mode", "Dark Mode"));
 
         //Get firebase instance
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
-        Location_Button = findViewById(R.id.Location_Button);
 
         //Get the email textview
         Actual_Email = findViewById(R.id.Actual_Email);
@@ -66,7 +75,7 @@ public class SettingActivity extends AppCompatActivity {
         });
 
         //Setting up the toolbar
-        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.toolbar_main);
+        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.Main_Toolbar);
         setSupportActionBar(toolbar);//Convert Toolbar into Actionbar so that it can be interactive
         if (getSupportActionBar() != null)
         {
@@ -77,7 +86,6 @@ public class SettingActivity extends AppCompatActivity {
         //Initializing the variables of the switches
         DarkModeSwitch = findViewById(R.id.switch_DarkMode);
         NotificationSwitch = findViewById(R.id.switch_notification);
-        LanguageButton = findViewById(R.id.button_language);
 
         //Shared preferences to save the settings
         PrefDarkMode = getSharedPreferences("Setting_SharedPref", MODE_PRIVATE);
@@ -85,6 +93,7 @@ public class SettingActivity extends AppCompatActivity {
 
         //Loads saved settings or set it as false if no data
         DarkModeON = PrefDarkMode.getBoolean("DarkModeON", false);
+        NotificationON = PrefDarkMode.getBoolean("NotificationON", false);
 
         //Updates the UI based on the saved settings
         DarkModeSwitch.setChecked(DarkModeON);
@@ -155,5 +164,19 @@ public class SettingActivity extends AppCompatActivity {
 
     }
 
+    public static class SettingItems
+    {
+        public int Icon_ID;
+        public String Title;
+        public String Description;
+
+        public SettingItems(String title, String description)
+        {
+            Title = title;
+            Description = description;
+        }
+    }
 }
+
+
 
