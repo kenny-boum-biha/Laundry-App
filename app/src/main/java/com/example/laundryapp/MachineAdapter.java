@@ -14,9 +14,15 @@ import java.util.List;
 public class MachineAdapter extends RecyclerView.Adapter<MachineAdapter.MachineViewHolder> {
 
     private final List<MachineItem> machines;
+    private final String locationId;
 
-    public MachineAdapter(List<MachineItem> machines) {
+    private final String roomId;
+
+    public MachineAdapter(List<MachineItem> machines, String locationId, String roomId) {
+
         this.machines = machines;
+        this.locationId = locationId;
+        this.roomId = roomId;
     }
 
     @NonNull
@@ -51,16 +57,7 @@ public class MachineAdapter extends RecyclerView.Adapter<MachineAdapter.MachineV
         }
 
         //make it possible to open the machine detail
-        holder.itemView.setOnClickListener(v->
-        {
-            android.content.Intent intent = new android.content.Intent(v.getContext(), MachineDetails.class);
 
-            intent.putExtra("machineName", m.name);
-            intent.putExtra("cycleTime", m.cycleTime);
-            intent.putExtra("telemetry", m.telemetry);
-
-            v.getContext().startActivity(intent);
-        });
     }
 
     @Override

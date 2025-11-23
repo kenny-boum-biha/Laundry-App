@@ -28,12 +28,11 @@ public class BluetoothServices {
 
     public BluetoothServices(long intervalMs) {
         this.db = FirebaseFirestore.getInstance();
-        this.executor = Executors.newSingleThreadScheduledExecutor();
-        this.random = new Random();
-        this.intervalMs = intervalMs; // e.g. 5000ms (5 seconds)
-    }
-
-    /**
+     this.executor = Executors.newSingleThreadScheduledExecutor();
+     this.random = new Random();
+     this.intervalMs = intervalMs; // e.g. 5000ms (5 seconds)
+     }
+      /*
      * Starts periodically simulating vibration readings for a machine.
      *
      * @param roomId     Firestore document ID for the room

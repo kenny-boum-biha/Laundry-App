@@ -53,6 +53,17 @@ public class RoomActivity extends AppCompatActivity {
     private Button buttonFilterIdle;
     private Button buttonFilterFinished;
 
+    private String locationId;
+    private String currentFilter = "all"; // "all", "running", "idle", "finished"
+
+    // Filter buttons
+    private Button buttonFilterAll;
+    private Button buttonFilterRunning;
+    private Button buttonFilterIdle;
+    private Button buttonFilterFinished;
+
+    private com.google.firebase.firestore.ListenerRegistration machinesListener;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,6 +78,7 @@ public class RoomActivity extends AppCompatActivity {
 
         locationID = getIntent().getStringExtra("locationID");
         roomId   = getIntent().getStringExtra("roomId");   // ex: "bb1_room_1"
+        locationId = getIntent().getStringExtra("locationID");
         String roomName = getIntent().getStringExtra("roomTitle"); // ex: "BB1 Room #1"
         if (roomName == null) roomName = "Laundry Room";
 
@@ -135,6 +147,10 @@ public class RoomActivity extends AppCompatActivity {
         if (bluetoothService != null) {
             bluetoothService.stopReading();
             bluetoothService = null;
+        }
+        if (machinesListener != null) {
+            machinesListener.remove();
+            machinesListener = null;
         }
     }
 
@@ -322,8 +338,13 @@ public class RoomActivity extends AppCompatActivity {
                                 // If status is null/empty, ignore this update and keep mock data status
                             }
                         }
+
+                        if (hasChanges) {
+                            applyFilter(currentFilter);
+                        }
                     }
                 });
     }
+
 }
 
