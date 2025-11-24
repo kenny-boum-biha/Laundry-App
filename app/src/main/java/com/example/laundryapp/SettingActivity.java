@@ -10,8 +10,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import android.widget.Button;
-import android.widget.Switch;
-
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.appcompat.app.AppCompatDelegate;//Import to default dark mode
 
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -24,7 +23,8 @@ import com.google.firebase.auth.FirebaseUser;
 
 import java.util.List;
 import java.util.ArrayList;
-import android.widget.ImageButton;
+import android.widget.LinearLayout;
+import android.view.View;
 
 public class SettingActivity extends AppCompatActivity {
     //Variables to check if the switch are on or off
@@ -32,8 +32,8 @@ public class SettingActivity extends AppCompatActivity {
     private boolean NotificationON;
 
     //Switches and button variables
-    private Switch DarkModeSwitch;
-    private Switch NotificationSwitch;
+    private SwitchCompat DarkModeSwitch;
+    private SwitchCompat NotificationSwitch;
     //SharedPreferences
     private SharedPreferences PrefDarkMode;
     private SharedPreferences.Editor editor;
@@ -42,7 +42,7 @@ public class SettingActivity extends AppCompatActivity {
     //Adding the location variables
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
-    private ImageButton Location_Button;
+    private View Location_Button;
 
     //Adding the email variables
     private TextView Actual_Email;
@@ -127,8 +127,8 @@ public class SettingActivity extends AppCompatActivity {
         });
 
         //Button for location
-        Location_Button = findViewById(R.id.Location_Button);
-        Location_Button.setOnClickListener(v1 -> {
+        View btnLocation = findViewById(R.id.Location_Button_Container);
+        btnLocation.setOnClickListener(v1 -> {
             Intent intent = new Intent(SettingActivity.this, LocationActivity.class);
             startActivity(intent);
         });

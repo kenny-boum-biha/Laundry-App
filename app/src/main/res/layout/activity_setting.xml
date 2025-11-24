@@ -5,131 +5,199 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="?android:attr/windowBackground"
     tools:context=".SettingActivity">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/Main_Toolbar"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorPrimary"
-        android:minHeight="?attr/actionBarSize"
-        android:theme="?attr/actionBarTheme"
+        android:elevation="4dp"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        app:title="Settings"
+        app:titleTextColor="@android:color/white"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:label="Settings" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ScrollView
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:fillViewport="true"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/Main_Toolbar"
-        app:layout_constraintBottom_toBottomOf="parent">
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/Main_Toolbar">
 
-        <TableLayout
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:stretchColumns="0,1">
+            android:orientation="vertical"
+            android:paddingBottom="32dp">
 
-            <!-- Row 1 -->
-            <TableRow
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="16dp">
-                    <!-- Notif ON/OFF switch -->
-                    <Switch
-                        android:id="@+id/switch_notification"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:text="Notification "
-                        android:layout_weight="1"/>
-
-                    <!-- Dark mode ON/OFF switch -->
-                    <Switch
-                        android:id="@+id/switch_DarkMode"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:text="Dark Mode"
-                        android:layout_weight="1"/>
-            </TableRow>
-
-            <!-- Row 2 -->
-            <TableRow
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:paddingStart="16dp"
+                android:paddingTop="24dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="8dp"
+                android:text="Account"
+                android:textColor="?attr/colorPrimary"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
                 android:padding="16dp">
-                    <!-- Email textview -->
-                    <TextView
-                        android:id="@+id/TextView_Email"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Email: "
-                        android:textStyle="bold" />
-                    <TextView
-                        android:id="@+id/Actual_Email"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="test"
-                        android:singleLine="true"
-                        android:ellipsize="end"
-                        android:gravity="end"
-                        android:textAlignment="textEnd" />
-            </TableRow>
 
-            <!-- Row3 -->
-            <TableRow>
-            <LinearLayout
-                android:orientation="vertical"
-                android:layout_width="0dp"
+                <TextView
+                    android:id="@+id/TextView_Email"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Email"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
+
+                <TextView
+                    android:id="@+id/Actual_Email"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxWidth="200dp"
+                    android:singleLine="true"
+                    android:text="user@example.com"
+                    android:textColor="?android:attr/textColorSecondary"
+                    android:textSize="16sp" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider" />
+
+            <TextView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="16dp"
-                android:layout_gravity="fill">
+                android:paddingStart="16dp"
+                android:paddingTop="24dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="8dp"
+                android:text="Preferences"
+                android:textColor="?attr/colorPrimary"
+                android:textStyle="bold" />
 
-                <!-- Change location button -->
-                <ImageButton
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/switch_notification"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:padding="16dp"
+                android:text="Enable Notifications"
+                android:textSize="16sp" />
+
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/switch_DarkMode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:padding="16dp"
+                android:text="Dark Mode"
+                android:textSize="16sp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="16dp"
+                android:paddingTop="24dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="8dp"
+                android:text="Security and Location"
+                android:textColor="?attr/colorPrimary"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:id="@+id/Location_Button_Container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <ImageView
                     android:id="@+id/Location_Button"
-                    android:background="@android:color/transparent"
-                    android:src="@drawable/changelocationtransparent"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:scaleType="centerCrop"
-                    android:adjustViewBounds="true"/>
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_height="wrap_content"
-                    android:text="Change Location">
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:contentDescription="Change Location Icon"
+                    android:src="@android:drawable/ic_menu_mylocation"
+                    app:tint="?android:attr/textColorPrimary" />
 
-                </TextView>
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="24dp"
+                    android:layout_weight="1"
+                    android:text="Change Location"
+                    android:textSize="16sp" />
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@android:drawable/arrow_down_float"
+                    android:rotation="-90"
+                    app:tint="?android:attr/textColorSecondary" />
             </LinearLayout>
 
             <LinearLayout
-                android:orientation="vertical"
-                android:layout_width="0dp"
+                android:id="@+id/Change_Password_Container"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="16dp"
-                android:layout_gravity="fill">
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="16dp">
 
-                <!-- Change password button -->
-                <ImageButton
+                <ImageView
                     android:id="@+id/Change_Password_Button"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:background="@android:color/transparent"
-                    android:src="@drawable/passwordchange"
-                    android:scaleType="centerCrop"
-                    android:adjustViewBounds="true"/>
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:contentDescription="Password Icon"
+                    android:src="@android:drawable/ic_lock_idle_lock"
+                    app:tint="?android:attr/textColorPrimary" />
 
                 <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="24dp"
+                    android:layout_weight="1"
+                    android:text="Change Password"
+                    android:textSize="16sp" />
+
+                <ImageView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Change Password">
-                </TextView>
+                    android:src="@android:drawable/arrow_down_float"
+                    android:rotation="-90"
+                    app:tint="?android:attr/textColorSecondary" />
             </LinearLayout>
-            </TableRow>
-        </TableLayout>
+
+        </LinearLayout>
     </ScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
