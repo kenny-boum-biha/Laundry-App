@@ -22,7 +22,7 @@
             android:id="@+id/roomIcon"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:src="@android:drawable/ic_menu_manage"
+            android:src="@drawable/baseline_local_laundry_service_24"
             android:contentDescription="@null" />
 
         <LinearLayout
