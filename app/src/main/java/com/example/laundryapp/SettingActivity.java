@@ -80,7 +80,7 @@ public class SettingActivity extends AppCompatActivity {
         if (getSupportActionBar() != null)
         {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);//Shows the back arrow to go back to the main activity
-            getSupportActionBar().setTitle("Setting");//Sets the title of the activity
+            getSupportActionBar().setTitle("Settings=");//Sets the title of the activity
         }
 
         //Initializing the variables of the switches

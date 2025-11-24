@@ -7,81 +7,74 @@ import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import androidx.annotation.RequiresPermission;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentChange;
-import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.ListenerRegistration;
 
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import androidx.annotation.Nullable;
 
 public class RoomActivity extends AppCompatActivity {
 
+    private static final String TAG = "RoomActivity";
+    private static final String CHANNEL_ID = "laundry_updates_channel";
+    private static final int PERMISSION_REQUEST_CODE = 101;
+
+    // UI Components
     private RecyclerView recyclerMachines;
     private TextView textNoReservations;
+    private Button buttonFilterAll, buttonFilterRunning, buttonFilterIdle, buttonFilterFinished;
+
+    // Data & Adapters
     private MachineAdapter machineAdapter;
-    private ArrayList<MachineItem> machines; // Full list of all machines
-    private ArrayList<MachineItem> filteredMachines; // Filtered list shown in RecyclerView
-    private BluetoothServices bluetoothService;
+    private ArrayList<MachineItem> machines; // Full list
+    private ArrayList<MachineItem> filteredMachines; // Displayed list
+    private String currentFilter = "all";
+
+    // Firebase & Services
     private FirebaseFirestore firestore;
+    private ListenerRegistration machinesListener;
+    private BluetoothServices bluetoothService;
 
+    // IDs
     private String roomId;
-    private String currentFilter = "all"; // "all", "running", "idle", "finished"
-    private String locationID;
-
-    // Filter buttons
-    private Button buttonFilterAll;
-    private Button buttonFilterRunning;
-    private Button buttonFilterIdle;
-    private Button buttonFilterFinished;
-
     private String locationId;
-    private String currentFilter = "all"; // "all", "running", "idle", "finished"
-
-    // Filter buttons
-    private Button buttonFilterAll;
-    private Button buttonFilterRunning;
-    private Button buttonFilterIdle;
-    private Button buttonFilterFinished;
-
-    private com.google.firebase.firestore.ListenerRegistration machinesListener;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_room);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
 
-                requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
+        // 1. Request Notification Permissions (Android 13+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, PERMISSION_REQUEST_CODE);
             }
         }
+        createNotificationChannel();
 
-        locationID = getIntent().getStringExtra("locationID");
-        roomId   = getIntent().getStringExtra("roomId");   // ex: "bb1_room_1"
-        locationId = getIntent().getStringExtra("locationID");
-        String roomName = getIntent().getStringExtra("roomTitle"); // ex: "BB1 Room #1"
+        // 2. Retrieve Intent Data
+        roomId = getIntent().getStringExtra("roomId");
+        locationId = getIntent().getStringExtra("locationID"); // Standardized to look for "locationID"
+        String roomName = getIntent().getStringExtra("roomTitle");
         if (roomName == null) roomName = "Laundry Room";
 
+        // 3. Setup Toolbar
         Toolbar toolbar = findViewById(R.id.roomToolbar);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
@@ -89,56 +82,40 @@ public class RoomActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
 
+        // 4. Initialize UI
         recyclerMachines = findViewById(R.id.recyclerMachines);
         textNoReservations = findViewById(R.id.textNoReservations);
-
-        // Initialize filter buttons
         buttonFilterAll = findViewById(R.id.buttonFilterAll);
         buttonFilterRunning = findViewById(R.id.buttonFilterRunning);
         buttonFilterIdle = findViewById(R.id.buttonFilterIdle);
         buttonFilterFinished = findViewById(R.id.buttonFilterFinished);
 
-        // Grid of 2 columns
+        // 5. Setup RecyclerView
         recyclerMachines.setLayoutManager(new GridLayoutManager(this, 2));
-
-        firestore = FirebaseFirestore.getInstance();
-
-        // --- Initial mock machine list (for UI before Firebase updates) ---
         machines = new ArrayList<>();
-
-        //Mock machine for machine details
-        //machines.add(new MachineItem("Washer 3", "idle", "washer", 0));
-
-        filteredMachines = new ArrayList<>(machines);
-        machineAdapter = new MachineAdapter(filteredMachines);
+        filteredMachines = new ArrayList<>();
+        // Pass locationId and roomId to adapter in case it needs them for sub-queries
+        machineAdapter = new MachineAdapter(filteredMachines, locationId, roomId);
         recyclerMachines.setAdapter(machineAdapter);
 
-        textNoReservations.setText("No reservations");
+        // 6. Firebase Init
+        firestore = FirebaseFirestore.getInstance();
 
-        // Set up filter button click listeners
+        // 7. Setup Filters & Listeners
         setupFilterButtons();
-        
-        // Set initial filter button state
         updateFilterButtonStates();
 
-        // --- Firestore listener to update machines in real-time ---
+        // Start listening for DB changes
         listenToMachineUpdates();
     }
 
-    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
     @Override
     protected void onStart() {
         super.onStart();
-        ReadDatabase();
-
-        // Start simulated BluetoothService for each machine
-//        bluetoothService = new BluetoothServices(5000L); // every 5s
-//
-//        for (MachineItem machine : machines) {
-//            // Use machine name as document ID in Firestore
-//            String machineId = machine.name.replaceAll("\\s+", "_"); // e.g., "Washer 1" -> "Washer_1"
-//           bluetoothService.startReading(roomId, machineId);
-//        }
+        // Start simulated BluetoothService
+        bluetoothService = new BluetoothServices(5000L);
+        // Note: We will start reading specific machines inside the Firestore listener
+        // once we actually know which machines exist.
     }
 
     @Override
@@ -160,182 +137,75 @@ public class RoomActivity extends AppCompatActivity {
         return true;
     }
 
-    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
-    private void ReadDatabase() {
-        AtomicBoolean firstReadFlag = new AtomicBoolean(true);
-        CollectionReference collectionRef = firestore.collection("locations")
-                .document(locationID)
-                .collection("rooms")
-                .document(roomId)
-                .collection("machines");
-        collectionRef.addSnapshotListener((snapshots, e) -> {
-            machines.clear();
-                for (QueryDocumentSnapshot document : snapshots) {
-                    String id = document.getId();
-                    String state = document.getString("state"); //Can be free, InProgress or Finished
-                    String label = document.getString("label");
-                    Map<String, Object> telemetry = (Map<String, Object>) document.get("telemetry");
-                    String status = Objects.requireNonNull(telemetry.get("status")).toString();
-                    String type = document.getString("type");
-                    MachineItem machine = new MachineItem(id, label, status, type, 0);
-                    machines.add(machine);
-                    assert state != null;
-                    if (state.equals("Finished") && !firstReadFlag.get()) {
-                        displayCompletionNotification("MACHINE UPDATE", label + " is finished.");
-                    }
-                    if(firstReadFlag.get()){
-                        firstReadFlag.set(false);
-                    }
+    // ============================================================
+    //                   FIRESTORE LISTENER
+    // ============================================================
 
-                }
-            machineAdapter = new MachineAdapter(machines);
-            recyclerMachines.setAdapter(machineAdapter);
-        });
-    }
-
-    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
-    private void displayCompletionNotification(String title, String message){
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-        {
-            String channelId = "default_channel";
-            NotificationChannel channel = new NotificationChannel(
-                    channelId,
-                    "Machine Updates",
-                    NotificationManager.IMPORTANCE_HIGH);
-            channel.setDescription("Notifies when machine has completed its task");
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel);
-        }
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default_channel")
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setContentTitle(title)
-                .setContentText(message)
-                .setAutoCancel(true)
-                .setPriority(NotificationCompat.PRIORITY_HIGH);
-        NotificationManagerCompat manager = NotificationManagerCompat.from(this);
-        manager.notify((int) System.currentTimeMillis(), builder.build());
-    }
-
-    // --- Filter button setup ---
-    private void setupFilterButtons() {
-        buttonFilterAll.setOnClickListener(v -> applyFilter("all"));
-        buttonFilterRunning.setOnClickListener(v -> applyFilter("running"));
-        buttonFilterIdle.setOnClickListener(v -> applyFilter("idle"));
-        buttonFilterFinished.setOnClickListener(v -> applyFilter("finished"));
-    }
-
-    // --- Apply filter to machine list ---
-    private void applyFilter(String filter) {
-        currentFilter = filter;
-        filteredMachines.clear();
-
-        for (MachineItem machine : machines) {
-            // Normalize status: treat null/empty as "idle" (same as display logic)
-            String status = machine.status != null && !machine.status.isEmpty() 
-                    ? machine.status.toLowerCase() 
-                    : "idle";
-            boolean shouldInclude = false;
-
-            switch (filter) {
-                case "all":
-                    shouldInclude = true;
-                    break;
-                case "running":
-                    shouldInclude = status.equals("running");
-                    break;
-                case "idle":
-                    shouldInclude = status.equals("idle");
-                    break;
-                case "finished":
-                    shouldInclude = status.equals("finished") || status.equals("done");
-                    break;
-            }
-
-            if (shouldInclude) {
-                filteredMachines.add(machine);
-            }
-        }
-
-        // Update button states
-        updateFilterButtonStates();
-
-        // Notify adapter of changes
-        machineAdapter.notifyDataSetChanged();
-
-        // Show/hide message based on filter and results
-        if (filteredMachines.isEmpty()) {
-            textNoReservations.setVisibility(TextView.VISIBLE);
-            String message = "No machines found";
-            switch (filter) {
-                case "idle":
-                    message = "No machines idle";
-                    break;
-                case "running":
-                    message = "No machines running";
-                    break;
-                case "finished":
-                    message = "No machines finished";
-                    break;
-                case "all":
-                    message = "No machines";
-                    break;
-            }
-            textNoReservations.setText(message);
-        } else {
-            textNoReservations.setVisibility(TextView.GONE);
-        }
-    }
-
-    // --- Update filter button visual states ---
-    private void updateFilterButtonStates() {
-        int activeColor = 0xFF6200EE; // Purple
-        int inactiveColor = 0xFF757575; // Gray
-
-        buttonFilterAll.setBackgroundTintList(ColorStateList.valueOf(
-                currentFilter.equals("all") ? activeColor : inactiveColor));
-        buttonFilterRunning.setBackgroundTintList(ColorStateList.valueOf(
-                currentFilter.equals("running") ? activeColor : inactiveColor));
-        buttonFilterIdle.setBackgroundTintList(ColorStateList.valueOf(
-                currentFilter.equals("idle") ? activeColor : inactiveColor));
-        buttonFilterFinished.setBackgroundTintList(ColorStateList.valueOf(
-                currentFilter.equals("finished") ? activeColor : inactiveColor));
-    }
-
-    // --- Firestore listener ---
     private void listenToMachineUpdates() {
-        firestore.collection("locations")
-                .document(locationID)
+        if (locationId == null || roomId == null) {
+            Log.e(TAG, "ERROR: LocationID or RoomID is NULL.");
+            return;
+        }
+
+        machinesListener = firestore.collection("locations")
+                .document(locationId)
                 .collection("rooms")
                 .document(roomId)
                 .collection("machines")
-                .addSnapshotListener(new EventListener<QuerySnapshot>() {
-                    @Override
-                    public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
-                        if (error != null) return;
+                .addSnapshotListener((value, error) -> {
+                    if (error != null) {
+                        Log.e(TAG, "Firestore Listen Failed", error);
+                        return;
+                    }
 
-                        if (value != null) {
-                            for (DocumentChange dc : value.getDocumentChanges()) {
-                                String id = dc.getDocument().getId();
-                                String status = dc.getDocument().getString("status");
-                                
-                                // Only update if Firestore has an explicit status field
-                                // This preserves the mock data status if Firestore doesn't provide one
-                                if (status != null && !status.isEmpty()) {
-                                    // Update local machine list
-                                    for (int i = 0; i < machines.size(); i++) {
-                                        MachineItem m = machines.get(i);
-                                        String machineId = m.name.replaceAll("\\s+", "_");
-                                        if (machineId.equals(id)) {
-                                            // Replace old MachineItem with updated status
-                                            machines.set(i, new MachineItem(m.machineID, m.name, status, m.type, m.iconResId));
-                                            
-                                            // Reapply current filter to update filtered list
-                                            applyFilter(currentFilter);
-                                            break;
+                    if (value != null) {
+                        boolean hasChanges = false;
+
+                        for (DocumentChange dc : value.getDocumentChanges()) {
+                            try {
+                                MachineItem machine = dc.getDocument().toObject(MachineItem.class);
+                                // If manual parsing is needed because your DB structure is complex (like the 'telemetry' map in Code B),
+                                // you would do it here. For now, assuming toObject works as per Code A.
+
+                                switch (dc.getType()) {
+                                    case ADDED:
+                                        machines.add(machine);
+                                        if (bluetoothService != null) {
+                                            bluetoothService.startReading(roomId, machine.name.replaceAll("\\s+", "_"));
                                         }
-                                    }
+                                        hasChanges = true;
+                                        break;
+
+                                    case MODIFIED:
+                                        for (int i = 0; i < machines.size(); i++) {
+                                            MachineItem existing = machines.get(i);
+                                            if (existing.id != null && existing.id.equals(machine.id)) {
+
+                                                // CHECK FOR NOTIFICATION CONDITION
+                                                // If it wasn't finished before, but is finished now -> Notify
+                                                if (!isFinished(existing.status) && isFinished(machine.status)) {
+                                                    displayCompletionNotification("Laundry Update", machine.name + " has finished!");
+                                                }
+
+                                                machines.set(i, machine);
+                                                hasChanges = true;
+                                                break;
+                                            }
+                                        }
+                                        break;
+
+                                    case REMOVED:
+                                        for (int i = 0; i < machines.size(); i++) {
+                                            if (machines.get(i).id != null && machines.get(i).id.equals(machine.id)) {
+                                                machines.remove(i);
+                                                hasChanges = true;
+                                                break;
+                                            }
+                                        }
+                                        break;
                                 }
-                                // If status is null/empty, ignore this update and keep mock data status
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error parsing machine doc: " + dc.getDocument().getId(), e);
                             }
                         }
 
@@ -346,5 +216,108 @@ public class RoomActivity extends AppCompatActivity {
                 });
     }
 
-}
+    // Helper to determine if a status string means "finished"
+    private boolean isFinished(String status) {
+        return status != null && (status.equalsIgnoreCase("finished") || status.equalsIgnoreCase("done"));
+    }
 
+    // ============================================================
+    //                   NOTIFICATIONS
+    // ============================================================
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "Machine Updates",
+                    NotificationManager.IMPORTANCE_HIGH
+            );
+            channel.setDescription("Notifies when machine has completed its task");
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(channel);
+            }
+        }
+    }
+
+    private void displayCompletionNotification(String title, String message) {
+        // Check permission for Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                return; // Cannot show notification without permission
+            }
+        }
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_launcher_foreground) // Make sure this icon exists, or change to R.mipmap.ic_launcher
+                .setContentTitle(title)
+                .setContentText(message)
+                .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_HIGH);
+
+        NotificationManagerCompat manager = NotificationManagerCompat.from(this);
+        manager.notify((int) System.currentTimeMillis(), builder.build());
+    }
+
+    // ============================================================
+    //                   FILTERING LOGIC
+    // ============================================================
+
+    private void setupFilterButtons() {
+        buttonFilterAll.setOnClickListener(v -> applyFilter("all"));
+        buttonFilterRunning.setOnClickListener(v -> applyFilter("running"));
+        buttonFilterIdle.setOnClickListener(v -> applyFilter("idle"));
+        buttonFilterFinished.setOnClickListener(v -> applyFilter("finished"));
+    }
+
+    private void applyFilter(String filter) {
+        currentFilter = filter;
+        filteredMachines.clear();
+
+        for (MachineItem machine : machines) {
+            String status = machine.status != null && !machine.status.isEmpty()
+                    ? machine.status.toLowerCase() : "idle";
+
+            boolean shouldInclude = false;
+            switch (filter) {
+                case "all": shouldInclude = true; break;
+                case "running": shouldInclude = status.equals("running"); break;
+                case "idle": shouldInclude = status.equals("idle"); break;
+                case "finished": shouldInclude = isFinished(status); break;
+            }
+
+            if (shouldInclude) {
+                filteredMachines.add(machine);
+            }
+        }
+
+        updateFilterButtonStates();
+        machineAdapter.notifyDataSetChanged();
+
+        // Handle Empty State Text
+        if (filteredMachines.isEmpty()) {
+            textNoReservations.setVisibility(View.VISIBLE);
+            String msg = "No machines found";
+            if (filter.equals("idle")) msg = "No machines idle";
+            else if (filter.equals("running")) msg = "No machines running";
+            else if (filter.equals("finished")) msg = "No machines finished";
+            textNoReservations.setText(msg);
+        } else {
+            textNoReservations.setVisibility(View.GONE);
+        }
+    }
+
+    private void updateFilterButtonStates() {
+        int activeColor = 0xFF6200EE; // Purple
+        int inactiveColor = 0xFF757575; // Gray
+
+        setButtonColor(buttonFilterAll, currentFilter.equals("all") ? activeColor : inactiveColor);
+        setButtonColor(buttonFilterRunning, currentFilter.equals("running") ? activeColor : inactiveColor);
+        setButtonColor(buttonFilterIdle, currentFilter.equals("idle") ? activeColor : inactiveColor);
+        setButtonColor(buttonFilterFinished, currentFilter.equals("finished") ? activeColor : inactiveColor);
+    }
+
+    private void setButtonColor(Button btn, int color) {
+        btn.setBackgroundTintList(ColorStateList.valueOf(color));
+    }
+}
