@@ -267,7 +267,7 @@ public class RoomActivity extends AppCompatActivity {
     private void setupFilterButtons() {
         buttonFilterAll.setOnClickListener(v -> applyFilter("all"));
         buttonFilterRunning.setOnClickListener(v -> applyFilter("running"));
-        buttonFilterIdle.setOnClickListener(v -> applyFilter("idle"));
+        buttonFilterIdle.setOnClickListener(v -> applyFilter("free"));
         buttonFilterFinished.setOnClickListener(v -> applyFilter("finished"));
     }
 
@@ -277,13 +277,13 @@ public class RoomActivity extends AppCompatActivity {
 
         for (MachineItem machine : machines) {
             String status = machine.status != null && !machine.status.isEmpty()
-                    ? machine.status.toLowerCase() : "idle";
+                    ? machine.status.toLowerCase() : "free";
 
             boolean shouldInclude = false;
             switch (filter) {
                 case "all": shouldInclude = true; break;
                 case "running": shouldInclude = status.equals("running"); break;
-                case "idle": shouldInclude = status.equals("idle"); break;
+                case "free": shouldInclude = status.equals("free"); break;
                 case "finished": shouldInclude = isFinished(status); break;
             }
 
@@ -299,7 +299,7 @@ public class RoomActivity extends AppCompatActivity {
         if (filteredMachines.isEmpty()) {
             textNoReservations.setVisibility(View.VISIBLE);
             String msg = "No machines found";
-            if (filter.equals("idle")) msg = "No machines idle";
+            if (filter.equals("free")) msg = "No machines free";
             else if (filter.equals("running")) msg = "No machines running";
             else if (filter.equals("finished")) msg = "No machines finished";
             textNoReservations.setText(msg);
@@ -314,7 +314,7 @@ public class RoomActivity extends AppCompatActivity {
 
         setButtonColor(buttonFilterAll, currentFilter.equals("all") ? activeColor : inactiveColor);
         setButtonColor(buttonFilterRunning, currentFilter.equals("running") ? activeColor : inactiveColor);
-        setButtonColor(buttonFilterIdle, currentFilter.equals("idle") ? activeColor : inactiveColor);
+        setButtonColor(buttonFilterIdle, currentFilter.equals("free") ? activeColor : inactiveColor);
         setButtonColor(buttonFilterFinished, currentFilter.equals("finished") ? activeColor : inactiveColor);
     }
 
