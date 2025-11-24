@@ -10,6 +10,9 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.firestore.AggregateQuery;
+import com.google.firebase.firestore.AggregateSource;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,16 +25,18 @@ import java.util.TimerTask;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
-
+    private  FirebaseFirestore db;
     private RecyclerView recyclerRooms;
     private RoomAdapter roomAdapter;
     protected ImageButton signOutButton;
     private FirebaseAuth mAuth;
     private ImageButton settingButton;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,17 +59,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onStart() {
         super.onStart();
+        this.db = FirebaseFirestore.getInstance();
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser != null) {
             currentUser.reload();
         }
-
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-        // TODO: later replace this with Firestore query of "rooms" collection
         ArrayList<RoomItem> rooms = new ArrayList<>();
-        rooms.add(new RoomItem("location_1","room_2", "Concordia Basement", "4 machines available"));
-
         roomAdapter = new RoomAdapter(rooms, room -> {
             Intent roomActivityIntent = new Intent(MainActivity.this, RoomActivity.class);
             if (currentUser != null) {
@@ -76,6 +76,36 @@ public class MainActivity extends AppCompatActivity {
                 goToLoginActivity();
             }
         });
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        CollectionReference collectionRef = db.collection("locations")
+                .document("location_1")
+                .collection("rooms");
+        collectionRef.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()){
+                rooms.clear();
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    String roomID = document.getId();
+                    String roomName = document.getString("name");
+                    db.collection("locations")
+                            .document("location_1")
+                            .collection("rooms")
+                            .document(roomID)
+                            .collection("machines")
+                            .get()
+                            .addOnSuccessListener(query -> {
+                                int machineCount = query.size();
+                                rooms.add(new RoomItem("location_1",roomID, roomName, machineCount + " machines in room."));
+                                roomAdapter.notifyItemInserted(rooms.size() - 1);
+                            });
+                }
+            }
+            else{
+                Log.e("DEBUG", "Error reading Firestore", task.getException());
+            }
+        });
+
+
 
         recyclerRooms.setAdapter(roomAdapter);
 

@@ -51,22 +51,22 @@ public class BluetoothServices {
                 if (!running) return;
 
                 // --- Simulated vibration data ---
-                double vibration = 0.5 + random.nextDouble() * 3.5; // between 0.5 and 4.0
-                boolean isRunning = vibration > 2.0; // arbitrary threshold
+             //   double vibration = 0.5 + random.nextDouble() * 3.5; // between 0.5 and 4.0
+              //  boolean isRunning = vibration > 2.0; // arbitrary threshold
 
                 // --- Update Firestore ---
-                Map<String, Object> data = new HashMap<>();
-                data.put("vibration", vibration);
-                data.put("isRunning", isRunning);
-                data.put("timestamp", System.currentTimeMillis());
+             //   Map<String, Object> data = new HashMap<>();
+             //   data.put("vibration", vibration);
+             //   data.put("isRunning", isRunning);
+             //   data.put("timestamp", System.currentTimeMillis());
 
                 db.collection("rooms")
                         .document(roomId)
                         .collection("machines")
-                        .document(machineId)
-                        .set(data)
-                        .addOnSuccessListener(aVoid -> Log.d(TAG, "Data updated: " + data))
-                        .addOnFailureListener(e -> Log.e(TAG, "Error updating Firestore", e));
+                        .document(machineId);
+                     //   .set(data)
+                     //   .addOnSuccessListener(aVoid -> Log.d(TAG, "Data updated: " + data))
+                     //   .addOnFailureListener(e -> Log.e(TAG, "Error updating Firestore", e));
 
                 // Reschedule next run
                 if (running) {
