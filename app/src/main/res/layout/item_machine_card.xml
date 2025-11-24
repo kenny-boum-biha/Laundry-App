@@ -24,7 +24,7 @@
             android:id="@+id/machineIcon"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:src="@drawable/ic_wash"
+            android:src="@drawable/baseline_water_drop_24"
             android:contentDescription="@null"
             app:tint="#000000" />
 
